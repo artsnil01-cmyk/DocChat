@@ -9,6 +9,7 @@ Implement the application foundation required before document ingestion and RAG.
 - [ ] Validate required environment variables.
 - [x] Add non-secret provider model configuration.
 - [x] Document the boundary between secrets, model config, and RAG strategy config.
+- [x] Add MongoDB index planning document.
 - [ ] Add MongoDB connection layer.
 - [ ] Add collection helpers for six MongoDB collections.
 - [ ] Add base indexes for accounts, sessions, documents, chunks, chats, and messages.
