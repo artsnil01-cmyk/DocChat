@@ -22,12 +22,13 @@ pnpm-debug.log*
 .next-dev.log
 .next-dev.err
 
+# Vercel
+.vercel/
+
+# local project notes
+Notes.md
+WORKING_PRACTICES.md
+
 # system
 .DS_Store
 Thumbs.db
-
-.vercel
-.env*
-
-
-Notes.md

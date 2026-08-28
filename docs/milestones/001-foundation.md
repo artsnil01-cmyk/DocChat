@@ -6,7 +6,7 @@ Implement the application foundation required before document ingestion and RAG.
 
 ## Steps
 
-- [ ] Validate required environment variables.
+- [x] Validate required environment variables.
 - [x] Add non-secret provider model configuration.
 - [x] Document the boundary between secrets, model config, and RAG strategy config.
 - [x] Add MongoDB index planning document.
