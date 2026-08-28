@@ -10,8 +10,8 @@ Implement the application foundation required before document ingestion and RAG.
 - [x] Add non-secret provider model configuration.
 - [x] Document the boundary between secrets, model config, and RAG strategy config.
 - [x] Add MongoDB index planning document.
-- [ ] Add MongoDB connection layer.
-- [ ] Add collection helpers for six MongoDB collections.
+- [x] Add MongoDB connection layer.
+- [x] Add collection helpers for six MongoDB collections.
 - [ ] Add base indexes for accounts, sessions, documents, chunks, chats, and messages.
 - [ ] Add Vercel Blob access verification.
 - [ ] Implement shared account seed with Argon2id.
