@@ -1,0 +1,38 @@
+{
+  "name": "docchat",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "setup": "tsx scripts/setup.ts",
+    "db:seed": "tsx scripts/seed.ts",
+    "db:indexes": "tsx scripts/create-indexes.ts",
+    "verify": "tsx scripts/verify-env.ts"
+  },
+  "dependencies": {
+    "@vercel/blob": "^2.8.0",
+    "cohere-ai": "^8.1.0",
+    "mongodb": "^7.6.0",
+    "next": "16.3.3",
+    "openai": "^7.8.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "@types/react": "^19.1.10",
+    "@types/react-dom": "^19.1.7",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.3.3",
+    "tsx": "^4.20.4",
+    "typescript": "^5.9.2"
+  }
+}
