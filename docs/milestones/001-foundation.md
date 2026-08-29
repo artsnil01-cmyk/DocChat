@@ -22,8 +22,8 @@ Implement the application foundation required before document ingestion and RAG.
 - [ ] Add Vercel Blob access verification.
 - [x] Add password hashing helpers.
 - [x] Implement shared account seed with Argon2id.
-- [ ] Implement opaque auth-token helpers.
-- [ ] Implement auth session persistence with SHA-256 token storage.
+- [x] Implement opaque auth-token helpers.
+- [x] Implement auth session persistence with SHA-256 token storage.
 - [ ] Implement signed persistent workspace cookie.
 - [ ] Implement auth guard and workspace resolver.
 - [ ] Build login page after design source is provided.
