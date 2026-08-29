@@ -15,8 +15,8 @@ Make the shared-account access gate usable from API routes and the login page.
 - [x] Clear auth cookie on logout.
 - [x] Preserve workspace cookie on logout.
 - [x] Protect backend route placeholders with auth guard.
-- [ ] Add login page UI from provided design.
-- [ ] Wire login form submission.
+- [x] Add login page UI from provided design.
+- [x] Wire login form submission.
 - [ ] Add authenticated app redirect behavior.
 
 ## Validation

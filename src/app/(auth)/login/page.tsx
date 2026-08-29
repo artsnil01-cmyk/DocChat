@@ -1,13 +1,35 @@
+import type { Metadata } from "next";
+
+import { LoginForm } from "./login-form";
+import styles from "./page.module.css";
+
+export const metadata: Metadata = {
+  title: "DocChat - Connexion",
+};
+
 export default function LoginPage() {
   return (
-    <main className="page-shell">
-      <section className="placeholder-panel" aria-labelledby="login-title">
-        <h1 id="login-title">DocChat login</h1>
-        <p>
-          Login UI will be implemented after the design source is provided. This
-          route is reserved for the shared test-account access gate.
-        </p>
+    <main className={styles.loginView} data-theme="dark">
+      <section className={styles.loginCard} aria-labelledby="loginTitle">
+        <div className={styles.loginBrandRow}>
+          <div className={styles.brandLockup}>
+            <span className={styles.brandName}>
+              Doc<span>Chat</span>
+            </span>
+            <span className={styles.brandBy}>by Smartly.ai</span>
+          </div>
+          <div className={styles.loginMark} aria-hidden="true" />
+        </div>
+
+        <h1 id="loginTitle">Bienvenue</h1>
+        <p>{"Accedez a l'espace d'evaluation DocChat."}</p>
+
+        <LoginForm />
       </section>
+
+      <div className={styles.loginFooter}>
+        {"Environnement d'evaluation technique"}
+      </div>
     </main>
   );
 }
