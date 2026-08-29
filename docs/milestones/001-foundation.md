@@ -7,23 +7,30 @@ Implement the application foundation required before document ingestion and RAG.
 ## Steps
 
 - [x] Validate required environment variables.
+- [x] Add script-safe env schema.
+- [x] Add server-only env wrapper.
 - [x] Add non-secret provider model configuration.
 - [x] Document the boundary between secrets, model config, and RAG strategy config.
 - [x] Add MongoDB index planning document.
 - [x] Add MongoDB connection layer.
 - [x] Add collection helpers for six MongoDB collections.
-- [ ] Add base indexes for accounts, sessions, documents, chunks, chats, and messages.
+- [x] Add ordinary MongoDB index creation script.
+- [ ] Add common validation primitives.
+- [ ] Add auth validation schemas.
+- [ ] Add document validation schemas.
+- [ ] Add chat validation schemas.
 - [ ] Add Vercel Blob access verification.
+- [ ] Add password hashing helpers.
 - [ ] Implement shared account seed with Argon2id.
-- [ ] Implement opaque auth-token sessions with SHA-256 token storage.
+- [ ] Implement opaque auth-token helpers.
+- [ ] Implement auth session persistence with SHA-256 token storage.
 - [ ] Implement signed persistent workspace cookie.
-- [ ] Implement workspace isolation without a `workspaces` collection.
-- [ ] Protect backend routes with auth guards.
+- [ ] Implement auth guard and workspace resolver.
 - [ ] Build login page after design source is provided.
 - [ ] Build base authenticated app shell after design source is provided.
 
 ## Validation
 
-- [ ] `npm run verify`
+- [x] `npm run verify`
 - [ ] `npm run setup`
 - [ ] Auth/session unit tests pass.
