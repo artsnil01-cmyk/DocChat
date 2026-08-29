@@ -1,8 +1,8 @@
-# Milestone 001: Foundation
+# Milestone 001: Backend Foundation
 
 ## Goal
 
-Implement the application foundation required before document ingestion and RAG.
+Establish server configuration, persistence access, setup scripts, and reusable auth primitives.
 
 ## Steps
 
@@ -27,11 +27,10 @@ Implement the application foundation required before document ingestion and RAG.
 - [x] Implement signed persistent workspace cookie.
 - [x] Implement auth guard and workspace resolver.
 - [x] Wire setup orchestration.
-- [ ] Build login page after design source is provided.
-- [ ] Build base authenticated app shell after design source is provided.
 
 ## Validation
 
 - [x] `npm run verify`
 - [ ] `npm run setup`
-- [ ] Auth/session unit tests pass.
+- [x] `npm run typecheck`
+- [x] `npm run lint`

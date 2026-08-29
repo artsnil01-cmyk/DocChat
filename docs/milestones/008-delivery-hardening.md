@@ -1,8 +1,8 @@
-# Milestone 005: Quality, Security, And Delivery
+# Milestone 008: Delivery Hardening
 
 ## Goal
 
-Harden the application for delivery and make the repository reproducible.
+Prepare the application for review and Vercel deployment.
 
 ## Steps
 
@@ -12,17 +12,15 @@ Harden the application for delivery and make the repository reproducible.
 - [ ] Tune refusal and grounding behavior.
 - [ ] Finalize retrieval score presentation.
 - [ ] Add sample PDFs.
-- [ ] Complete unit tests.
-- [ ] Complete integration tests.
-- [ ] Complete E2E test.
 - [ ] Complete README.
-- [ ] Add final architecture diagram.
+- [ ] Add final architecture diagrams.
 - [ ] Validate Vercel deployment.
-- [ ] Record final evaluation results.
+- [ ] Record final evaluation summary.
 
 ## Validation
 
 - [ ] `npm run typecheck`
+- [ ] `npm run lint`
 - [ ] `npm run build`
 - [ ] Full test suite passes.
 - [ ] Deployed app satisfies PRD success criteria.
