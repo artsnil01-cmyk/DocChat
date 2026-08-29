@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 
+import { getAuthenticatedWorkspace } from "@/lib/auth/guards";
 import { LoginForm } from "./login-form";
 import styles from "./page.module.css";
 
@@ -7,7 +9,13 @@ export const metadata: Metadata = {
   title: "DocChat - Connexion",
 };
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  const authenticatedWorkspace = await getAuthenticatedWorkspace();
+
+  if (authenticatedWorkspace) {
+    redirect("/");
+  }
+
   return (
     <main className={styles.loginView} data-theme="dark">
       <section className={styles.loginCard} aria-labelledby="loginTitle">

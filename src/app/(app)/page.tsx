@@ -1,4 +1,14 @@
-export default function MainPage() {
+import { redirect } from "next/navigation";
+
+import { getAuthenticatedWorkspace } from "@/lib/auth/guards";
+
+export default async function MainPage() {
+  const authenticatedWorkspace = await getAuthenticatedWorkspace();
+
+  if (!authenticatedWorkspace) {
+    redirect("/login");
+  }
+
   return (
     <main className="page-shell">
       <section className="placeholder-panel" aria-labelledby="app-title">

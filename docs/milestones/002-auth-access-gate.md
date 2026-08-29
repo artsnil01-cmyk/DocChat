@@ -17,7 +17,7 @@ Make the shared-account access gate usable from API routes and the login page.
 - [x] Protect backend route placeholders with auth guard.
 - [x] Add login page UI from provided design.
 - [x] Wire login form submission.
-- [ ] Add authenticated app redirect behavior.
+- [x] Add authenticated app redirect behavior.
 
 ## Validation
 

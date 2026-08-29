@@ -20,17 +20,27 @@ export class AuthenticationError extends Error {
 }
 
 export async function requireAuthenticatedWorkspace(): Promise<AuthenticatedWorkspace> {
+  const authenticatedWorkspace = await getAuthenticatedWorkspace();
+
+  if (!authenticatedWorkspace) {
+    throw new AuthenticationError();
+  }
+
+  return authenticatedWorkspace;
+}
+
+export async function getAuthenticatedWorkspace(): Promise<AuthenticatedWorkspace | null> {
   const cookieStore = await cookies();
   const authToken = cookieStore.get(AUTH_COOKIE_NAME)?.value;
 
   if (!authToken) {
-    throw new AuthenticationError();
+    return null;
   }
 
   const session = await findValidSessionByToken(authToken);
 
   if (!session) {
-    throw new AuthenticationError("Authentication session is invalid or expired.");
+    return null;
   }
 
   return {
