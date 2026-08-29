@@ -24,7 +24,7 @@ Implement the application foundation required before document ingestion and RAG.
 - [x] Implement shared account seed with Argon2id.
 - [x] Implement opaque auth-token helpers.
 - [x] Implement auth session persistence with SHA-256 token storage.
-- [ ] Implement signed persistent workspace cookie.
+- [x] Implement signed persistent workspace cookie.
 - [ ] Implement auth guard and workspace resolver.
 - [ ] Build login page after design source is provided.
 - [ ] Build base authenticated app shell after design source is provided.
