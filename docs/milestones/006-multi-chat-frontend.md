@@ -2,7 +2,7 @@
 
 ## Goal
 
-Implement the final user-facing chat and document workspace from the provided design.
+Implement the user-facing chat and document workspace on top of the stable backend domains.
 
 ## Steps
 

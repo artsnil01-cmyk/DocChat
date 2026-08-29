@@ -2,7 +2,7 @@
 
 ## Goal
 
-Deliver the first grounded French/Arabic RAG path over selected chat documents.
+Deliver the first grounded French/Arabic RAG path over selected chat documents after chat and document domains are stable.
 
 ## Steps
 
@@ -19,6 +19,8 @@ Deliver the first grounded French/Arabic RAG path over selected chat documents.
 - [ ] Rerank with Cohere.
 - [ ] Expand parent and neighboring context.
 - [ ] Enforce evidence context budget.
+- [ ] Persist user messages.
+- [ ] Persist assistant messages.
 - [ ] Generate grounded OpenAI streamed answers.
 - [ ] Return source chunk references and relevance scores.
 

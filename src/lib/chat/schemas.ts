@@ -9,6 +9,10 @@ export const createChatRequestSchema = z.object({
   title: nonEmptyStringSchema.max(120).optional(),
 });
 
+export const chatRouteParamsSchema = z.object({
+  chatId: objectIdStringSchema,
+});
+
 export const chatMessageRequestSchema = z.object({
   chatId: objectIdStringSchema,
   question: nonEmptyStringSchema.max(8000),
@@ -16,4 +20,5 @@ export const chatMessageRequestSchema = z.object({
 });
 
 export type CreateChatRequest = z.infer<typeof createChatRequestSchema>;
+export type ChatRouteParams = z.infer<typeof chatRouteParamsSchema>;
 export type ChatMessageRequest = z.infer<typeof chatMessageRequestSchema>;

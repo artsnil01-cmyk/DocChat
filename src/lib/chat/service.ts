@@ -1,0 +1,140 @@
+import "server-only";
+
+import { ObjectId } from "mongodb";
+
+import { chatsCollection, messagesCollection } from "@/lib/db/collections";
+import type { Chat } from "@/models/chat";
+import type { Message } from "@/models/message";
+
+const defaultChatTitle = "Nouvelle conversation";
+const recentMessageLimit = 50;
+
+export type ChatSummary = {
+  id: string;
+  title: string;
+  documentIds: string[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ChatMessageView = {
+  id: string;
+  chatId: string;
+  role: Message["role"];
+  content: string;
+  status: Message["status"];
+  sources?: {
+    chunkId: string;
+    relevanceScore: number;
+  }[];
+  createdAt: string;
+};
+
+export type ChatDetail = ChatSummary & {
+  messages: ChatMessageView[];
+};
+
+export async function createChat(params: {
+  workspaceId: string;
+  title?: string;
+}): Promise<ChatSummary> {
+  const now = new Date();
+  const chat: Chat = {
+    _id: new ObjectId(),
+    workspaceId: params.workspaceId,
+    title: params.title ?? defaultChatTitle,
+    documentIds: [],
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  const chats = await chatsCollection();
+  await chats.insertOne(chat);
+
+  return toChatSummary(chat);
+}
+
+export async function listChats(workspaceId: string): Promise<ChatSummary[]> {
+  const chats = await chatsCollection();
+  const workspaceChats = await chats
+    .find({ workspaceId })
+    .sort({ updatedAt: -1 })
+    .toArray();
+
+  return workspaceChats.map(toChatSummary);
+}
+
+export async function getChatDetail(params: {
+  chatId: ObjectId;
+  workspaceId: string;
+}): Promise<ChatDetail | null> {
+  const chats = await chatsCollection();
+  const chat = await chats.findOne({
+    _id: params.chatId,
+    workspaceId: params.workspaceId,
+  });
+
+  if (!chat) {
+    return null;
+  }
+
+  const messages = await messagesCollection();
+  const recentMessages = await messages
+    .find({ chatId: chat._id })
+    .sort({ createdAt: -1 })
+    .limit(recentMessageLimit)
+    .toArray();
+
+  return {
+    ...toChatSummary(chat),
+    messages: recentMessages.reverse().map(toChatMessageView),
+  };
+}
+
+export async function deleteChat(params: {
+  chatId: ObjectId;
+  workspaceId: string;
+}): Promise<boolean> {
+  const chats = await chatsCollection();
+  const chat = await chats.findOne({
+    _id: params.chatId,
+    workspaceId: params.workspaceId,
+  });
+
+  if (!chat) {
+    return false;
+  }
+
+  const messages = await messagesCollection();
+  await Promise.all([
+    messages.deleteMany({ chatId: chat._id }),
+    chats.deleteOne({ _id: chat._id }),
+  ]);
+
+  return true;
+}
+
+function toChatSummary(chat: Chat): ChatSummary {
+  return {
+    id: chat._id.toHexString(),
+    title: chat.title,
+    documentIds: chat.documentIds.map((documentId) => documentId.toHexString()),
+    createdAt: chat.createdAt.toISOString(),
+    updatedAt: chat.updatedAt.toISOString(),
+  };
+}
+
+function toChatMessageView(message: Message): ChatMessageView {
+  return {
+    id: message._id.toHexString(),
+    chatId: message.chatId.toHexString(),
+    role: message.role,
+    content: message.content,
+    status: message.status,
+    sources: message.sources?.map((source) => ({
+      chunkId: source.chunkId.toHexString(),
+      relevanceScore: source.relevanceScore,
+    })),
+    createdAt: message.createdAt.toISOString(),
+  };
+}
