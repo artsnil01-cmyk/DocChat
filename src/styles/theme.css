@@ -1,0 +1,85 @@
+:root {
+  color-scheme: light;
+  --font-sans:
+    Inter,
+    "SF Pro Text",
+    "Segoe UI Variable Text",
+    "Segoe UI",
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --sidebar-width: 272px;
+  --chat-width: 790px;
+  --canvas: #f4f0e8;
+  --canvas-deep: #eee7db;
+  --sidebar: #eee8dd;
+  --paper: #fffcf7;
+  --paper-soft: #f8f3ea;
+  --paper-raised: #ffffff;
+  --ink: #1b221e;
+  --ink-soft: #39433d;
+  --muted: #717970;
+  --subtle: #959b94;
+  --line: #dcd3c5;
+  --line-soft: #e8e1d6;
+  --line-strong: #c9bfaf;
+  --accent: #315d49;
+  --accent-strong: #254b3a;
+  --accent-dark: #1c3d30;
+  --accent-soft: #e2ebe4;
+  --accent-softer: #f0f4f0;
+  --accent-ink: #284838;
+  --accent-contrast: #ffffff;
+  --action: #191c1a;
+  --action-contrast: #fffcf7;
+  --gold: #c58d3c;
+  --gold-soft: #f1dfc2;
+  --danger: #b94f53;
+  --danger-soft: #f8e7e5;
+  --shadow-soft: 0 10px 35px rgba(65, 54, 39, 0.07);
+  --shadow-panel: 0 24px 70px rgba(65, 54, 39, 0.14);
+  --shadow-float: 0 18px 55px rgba(65, 54, 39, 0.11);
+}
+
+[data-docchat-theme="green"] {
+  color-scheme: dark;
+  --canvas: #111511;
+  --canvas-deep: #0d110e;
+  --sidebar: #141a15;
+  --paper: #191f1a;
+  --paper-soft: #1e251f;
+  --paper-raised: #202821;
+  --ink: #f4f0e7;
+  --ink-soft: #d1d7d1;
+  --muted: #a2aaa2;
+  --subtle: #747d75;
+  --line: #2b332c;
+  --line-soft: #232a24;
+  --line-strong: #3a453c;
+  --accent: #7ba18a;
+  --accent-strong: #9db9a5;
+  --accent-dark: #c3d3c7;
+  --accent-soft: #263229;
+  --accent-softer: #1b241e;
+  --accent-ink: #dce8df;
+  --accent-contrast: #101611;
+  --action: #f3f0e8;
+  --action-contrast: #151a16;
+  --gold: #d6a55a;
+  --gold-soft: #3d3020;
+  --danger: #e0797d;
+  --danger-soft: #351e20;
+  --shadow-soft: 0 10px 35px rgba(0, 0, 0, 0.18);
+  --shadow-panel: 0 24px 70px rgba(0, 0, 0, 0.38);
+  --shadow-float: 0 18px 55px rgba(0, 0, 0, 0.28);
+}
+
+[data-docchat-theme="ivory"] {
+  color-scheme: light;
+}

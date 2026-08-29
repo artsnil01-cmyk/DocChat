@@ -1,0 +1,196 @@
+.conversation {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 38px 44px 30px;
+  position: relative;
+  z-index: 1;
+}
+
+.chatContainer {
+  width: min(var(--chat-width), 100%);
+  min-height: 100%;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.emptyState {
+  width: min(520px, 100%);
+  padding: 40px 0;
+  color: var(--muted);
+  text-align: center;
+}
+
+.emptyArt {
+  width: 82px;
+  height: 58px;
+  margin: 0 auto 24px;
+  position: relative;
+}
+
+.emptyArt span {
+  position: absolute;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--paper);
+  box-shadow: var(--shadow-soft);
+}
+
+.emptyArt span:nth-child(1) {
+  width: 46px;
+  height: 58px;
+  left: 5px;
+  top: 0;
+}
+
+.emptyArt span:nth-child(2) {
+  width: 42px;
+  height: 50px;
+  right: 2px;
+  top: 5px;
+  background: var(--paper-soft);
+}
+
+.emptyArt span:nth-child(3) {
+  width: 30px;
+  height: 34px;
+  left: 26px;
+  top: 12px;
+  background: var(--accent-softer);
+}
+
+.emptyKicker {
+  color: var(--accent);
+  font-size: 9px;
+  font-weight: 780;
+  letter-spacing: 0.16em;
+}
+
+.emptyState h1 {
+  margin: 13px 0 0;
+  color: var(--ink);
+  font-size: clamp(28px, 4vw, 42px);
+  line-height: 1.06;
+  font-weight: 650;
+  letter-spacing: 0;
+}
+
+.emptyState p {
+  max-width: 390px;
+  margin: 14px auto 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.composerWrap {
+  padding: 18px 44px 28px;
+  position: relative;
+  z-index: 2;
+}
+
+.composer {
+  width: min(var(--chat-width), 100%);
+  margin: 0 auto;
+  padding: 10px 11px 9px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-lg);
+  background: var(--paper-raised);
+  box-shadow: 0 16px 44px rgba(60, 50, 36, 0.1);
+}
+
+.composerChips {
+  min-height: 0;
+}
+
+.composerInput {
+  width: 100%;
+  height: 38px;
+  min-height: 38px;
+  max-height: 132px;
+  padding: 7px 4px;
+  border: 0;
+  resize: none;
+  background: transparent;
+  color: var(--ink);
+  display: block;
+  line-height: 1.55;
+}
+
+.composerInput::placeholder {
+  color: var(--subtle);
+}
+
+.composeFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.composerTools {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.inlineUploadButton,
+.mentionButton,
+.sendButton {
+  border: 1px solid var(--line);
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+}
+
+.inlineUploadButton {
+  width: 31px;
+  height: 31px;
+  border-radius: 9px;
+  background: var(--paper-soft);
+  font-size: 17px;
+}
+
+.mentionButton {
+  height: 31px;
+  padding: 0 10px;
+  border-radius: 9px;
+  background: var(--paper-soft);
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 620;
+}
+
+.sendButton {
+  width: 33px;
+  height: 33px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--line);
+  color: var(--subtle);
+  font-size: 17px;
+}
+
+@media (max-width: 860px) {
+  .conversation {
+    padding: 30px 18px 24px;
+  }
+
+  .composerWrap {
+    padding: 14px 14px 18px;
+  }
+}
+
+@media (max-width: 520px) {
+  .conversation {
+    padding-top: 24px;
+  }
+
+  .mentionButton {
+    max-width: 132px;
+  }
+}

@@ -1,0 +1,394 @@
+.appView {
+  width: 100%;
+  height: 100vh;
+  display: grid;
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+  overflow: hidden;
+  background: var(--canvas);
+  color: var(--ink);
+}
+
+.overlayBackdrop {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  position: fixed;
+  inset: 0;
+  z-index: 18;
+  border: 0;
+  background: rgba(22, 20, 17, 0.28);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 160ms ease;
+}
+
+.overlayBackdropVisible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.sidebar {
+  min-width: 0;
+  height: 100%;
+  background: var(--sidebar);
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.sidebar::before,
+.main::before {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+.sidebar::before {
+  inset: 0 0 auto;
+  height: 220px;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--accent) 8%, transparent), transparent 70%);
+}
+
+.sidebarHeader {
+  padding: 17px 14px 10px;
+  position: relative;
+  z-index: 1;
+}
+
+.sidebarBrandRow {
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.iconButton {
+  width: 31px;
+  height: 31px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--muted);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.iconButton:disabled,
+.newChatButton:disabled,
+.documentsButton:disabled,
+.mobileMenuButton:disabled {
+  cursor: default;
+}
+
+.iconButton:not(:disabled):hover,
+.profileTrigger:hover,
+.documentsButton:not(:disabled):hover,
+.mobileMenuButton:hover,
+.logoutButton:hover {
+  border-color: var(--line-strong);
+}
+
+.sidebarSectionTitle {
+  margin-top: 24px;
+  padding: 0 2px;
+  color: var(--subtle);
+  font-size: 8.5px;
+  font-weight: 780;
+  letter-spacing: 0.14em;
+}
+
+.newChatButton {
+  width: 100%;
+  height: 41px;
+  margin-top: 9px;
+  padding: 0 11px;
+  border: 1px solid var(--action);
+  border-radius: 9px;
+  background: var(--action);
+  color: var(--action-contrast);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 12px;
+  font-weight: 680;
+  box-shadow: 0 6px 16px rgba(28, 27, 24, 0.07);
+}
+
+.newChatIcon {
+  width: 21px;
+  height: 21px;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.sidebarScroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 12px 9px 10px;
+  position: relative;
+  z-index: 1;
+}
+
+.emptySidebarState {
+  min-height: 52px;
+  padding: 0 7px;
+  color: var(--subtle);
+  display: flex;
+  align-items: center;
+  font-size: 11px;
+}
+
+.sidebarFooter {
+  padding: 9px 9px 11px;
+  border-top: 1px solid var(--line);
+  position: relative;
+  z-index: 2;
+}
+
+.profileTrigger {
+  width: 100%;
+  height: 42px;
+  padding: 0 9px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink-soft);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  cursor: pointer;
+}
+
+.avatar {
+  width: 29px;
+  height: 29px;
+  flex: 0 0 29px;
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--line));
+  border-radius: 50%;
+  background: var(--accent-softer);
+  color: var(--accent-ink);
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  font-weight: 760;
+}
+
+.profileName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12.3px;
+  font-weight: 630;
+}
+
+.profileMore {
+  margin-left: auto;
+  color: var(--subtle);
+}
+
+.accountMenu {
+  width: calc(100% - 18px);
+  padding: 6px;
+  position: absolute;
+  left: 9px;
+  bottom: 61px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+  box-shadow: var(--shadow-soft);
+}
+
+.accountMenuOpen {
+  display: block;
+}
+
+.logoutButton {
+  width: 100%;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.logoutButton:disabled {
+  color: var(--subtle);
+  cursor: default;
+}
+
+.main {
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--canvas);
+  position: relative;
+}
+
+.main::before {
+  right: -130px;
+  top: -100px;
+  width: 720px;
+  height: 410px;
+  background: repeating-linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--accent) 6%, transparent) 0 1px,
+    transparent 1px 34px
+  );
+  mask-image: linear-gradient(145deg, #000, transparent 76%);
+}
+
+.topbar {
+  height: 64px;
+  min-height: 64px;
+  padding: 0 22px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  position: relative;
+  z-index: 2;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+  background: color-mix(in srgb, var(--canvas) 86%, transparent);
+  backdrop-filter: blur(14px);
+}
+
+.mobileMenuButton,
+.mobileBrand {
+  display: none;
+}
+
+.topbarSpacer {
+  flex: 1;
+}
+
+.documentsButton {
+  height: 38px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.documentsButtonIcon {
+  width: 25px;
+  height: 25px;
+  border-radius: 7px;
+  background: var(--action);
+  color: var(--action-contrast);
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+}
+
+.documentsButtonCopy {
+  display: flex;
+  align-items: center;
+}
+
+.documentsButtonCopy strong {
+  color: var(--ink);
+  font-size: 10.5px;
+  font-weight: 680;
+}
+
+.documentsCount {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--paper-soft);
+  color: var(--ink);
+  display: grid;
+  place-items: center;
+  font-size: 8.5px;
+  font-weight: 760;
+}
+
+.workbench {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.threadSheet {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+@media (max-width: 860px) {
+  .appView {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    width: min(var(--sidebar-width), calc(100vw - 44px));
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 22;
+    transform: translateX(-100%);
+    transition: transform 180ms ease;
+  }
+
+  .sidebarOpen {
+    transform: translateX(0);
+  }
+
+  .topbar {
+    padding: 0 14px;
+  }
+
+  .mobileMenuButton {
+    width: 38px;
+    height: 38px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--paper);
+    color: var(--ink);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+  }
+
+  .mobileBrand {
+    display: block;
+    color: var(--ink);
+    font-size: 13px;
+    font-weight: 720;
+  }
+}
+
+@media (max-width: 520px) {
+  .documentsButtonCopy {
+    display: none;
+  }
+}

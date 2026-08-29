@@ -1,0 +1,27 @@
+.brandLockup {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 7px;
+  white-space: nowrap;
+}
+
+.brandName {
+  color: var(--ink);
+  font-size: 17px;
+  line-height: 1;
+  font-weight: 770;
+  letter-spacing: 0;
+}
+
+.brandName span {
+  color: var(--accent);
+}
+
+.brandBy {
+  margin-bottom: -2px;
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1;
+  letter-spacing: 0;
+  transform: translateY(2px);
+}

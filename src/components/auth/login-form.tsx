@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import styles from "./page.module.css";
+import styles from "./login.module.css";
 
 type FieldErrors = {
   email?: string;

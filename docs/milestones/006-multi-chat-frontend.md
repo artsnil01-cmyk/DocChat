@@ -6,9 +6,10 @@ Implement the final user-facing chat and document workspace from the provided de
 
 ## Steps
 
-- [ ] Build login page UI from provided design.
-- [ ] Build authenticated app shell.
-- [ ] Add chat sidebar.
+- [x] Build login page UI from provided design.
+- [x] Build authenticated app shell.
+- [x] Add chat sidebar.
+- [x] Add app shell overlay interactions.
 - [ ] Add new-chat flow.
 - [ ] Add document upload surface.
 - [ ] Show document processing states.
