@@ -20,7 +20,12 @@ export const documentRouteParamsSchema = z.object({
   documentId: objectIdStringSchema,
 });
 
+export const listDocumentsQuerySchema = z.object({
+  chatId: objectIdStringSchema.optional(),
+});
+
 export type UploadPreflightRequest = z.infer<
   typeof uploadPreflightRequestSchema
 >;
 export type DocumentRouteParams = z.infer<typeof documentRouteParamsSchema>;
+export type ListDocumentsQuery = z.infer<typeof listDocumentsQuerySchema>;
