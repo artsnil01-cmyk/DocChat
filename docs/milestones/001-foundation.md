@@ -15,10 +15,10 @@ Implement the application foundation required before document ingestion and RAG.
 - [x] Add MongoDB connection layer.
 - [x] Add collection helpers for six MongoDB collections.
 - [x] Add ordinary MongoDB index creation script.
-- [ ] Add common validation primitives.
-- [ ] Add auth validation schemas.
-- [ ] Add document validation schemas.
-- [ ] Add chat validation schemas.
+- [x] Add common validation primitives.
+- [x] Add auth validation schemas.
+- [x] Add document validation schemas.
+- [x] Add chat validation schemas.
 - [ ] Add Vercel Blob access verification.
 - [ ] Add password hashing helpers.
 - [ ] Implement shared account seed with Argon2id.
