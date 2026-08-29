@@ -21,8 +21,8 @@ Make the shared-account access gate usable from API routes and the login page.
 
 ## Validation
 
-- [ ] Login succeeds with seeded account.
-- [ ] Invalid credentials fail.
-- [ ] Logout revokes the active session.
-- [ ] Workspace cookie survives logout.
-- [ ] Protected APIs reject unauthenticated requests.
+- [x] Login succeeds with seeded account.
+- [x] Invalid credentials fail.
+- [x] Logout revokes the active session.
+- [x] Workspace cookie survives logout.
+- [x] Protected APIs reject unauthenticated requests.

@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { BrandLockup } from "@/components/brand/brand-lockup";
 
@@ -13,30 +13,30 @@ type LoginShellProps = {
 
 type LoginTheme = "ivory" | "green";
 
-const loginThemeStorageKey = "docchat-login-theme";
-
-function readStoredLoginTheme(): LoginTheme {
-  if (typeof window === "undefined") {
-    return "green";
-  }
-
-  const storedTheme = window.localStorage.getItem(loginThemeStorageKey);
-
-  if (storedTheme === "ivory" || storedTheme === "green") {
-    return storedTheme;
-  }
-
-  return "green";
-}
+const themeStorageKey = "docchat-theme";
 
 export function LoginShell({ children }: LoginShellProps) {
-  const [theme, setTheme] = useState<LoginTheme>(readStoredLoginTheme);
+  const [theme, setTheme] = useState<LoginTheme>("green");
   const isDarkTheme = theme === "green";
+
+  useEffect(() => {
+    const storedTheme = window.localStorage.getItem(themeStorageKey);
+
+    if (storedTheme !== "ivory" && storedTheme !== "green") {
+      return;
+    }
+
+    const frameId = window.requestAnimationFrame(() => {
+      setTheme(storedTheme);
+    });
+
+    return () => window.cancelAnimationFrame(frameId);
+  }, []);
 
   function toggleTheme() {
     setTheme((currentTheme) => {
       const nextTheme = currentTheme === "green" ? "ivory" : "green";
-      window.localStorage.setItem(loginThemeStorageKey, nextTheme);
+      window.localStorage.setItem(themeStorageKey, nextTheme);
       return nextTheme;
     });
   }
@@ -74,7 +74,7 @@ export function LoginShell({ children }: LoginShellProps) {
           </div>
 
           <div className={styles.copy}>
-            <span className={styles.eyebrow}>ESPACE SECURISE</span>
+            <span className={styles.eyebrow}>ESPACE DOCUMENTAIRE</span>
             <h1 id="loginTitle">
               Retrouvez l&rsquo;essentiel
               <br />
@@ -120,7 +120,7 @@ export function LoginShell({ children }: LoginShellProps) {
           </div>
         </aside>
       </section>
-      <div className={styles.loginFooter}>DocChat · Environnement d’évaluation technique</div>
+      <div className={styles.loginFooter}>DocChat by Smartly.ai</div>
     </main>
   );
 }

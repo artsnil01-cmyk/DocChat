@@ -10,7 +10,7 @@ type FieldErrors = {
   password?: string;
 };
 
-type FormSubmitEvent = {
+type LoginFormSubmitEvent = {
   preventDefault: () => void;
   currentTarget: HTMLFormElement;
 };
@@ -21,7 +21,7 @@ export function LoginForm() {
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  async function handleSubmit(event: FormSubmitEvent) {
+  async function handleSubmit(event: LoginFormSubmitEvent) {
     event.preventDefault();
 
     const formData = new FormData(event.currentTarget);
@@ -63,14 +63,19 @@ export function LoginForm() {
       router.replace("/");
       router.refresh();
     } catch {
-      setFormError("La connexion a echoue. Reessayez dans un instant.");
+      setFormError("La connexion a échoué. Réessayez dans un instant.");
     } finally {
       setIsSubmitting(false);
     }
   }
 
   return (
-    <form className={styles.loginForm} onSubmit={handleSubmit} noValidate>
+    <form
+      className={styles.loginForm}
+      method="post"
+      onSubmit={handleSubmit}
+      noValidate
+    >
       <div className={styles.field}>
         <label htmlFor="emailInput">Adresse e-mail</label>
         <input

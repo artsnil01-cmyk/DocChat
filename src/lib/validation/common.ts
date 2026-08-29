@@ -3,9 +3,10 @@ import { z } from "zod";
 export const nonEmptyStringSchema = z.string().trim().min(1);
 
 export const emailSchema = z
-  .email()
+  .string()
   .trim()
-  .toLowerCase();
+  .toLowerCase()
+  .pipe(z.email());
 
 export const objectIdStringSchema = z
   .string()

@@ -6,25 +6,43 @@
   overflow: hidden;
   background: var(--canvas);
   color: var(--ink);
+  transition: grid-template-columns 0.18s ease;
+}
+
+.sidebarCollapsed {
+  grid-template-columns: var(--rail-width) minmax(0, 1fr);
 }
 
 .overlayBackdrop {
-  width: 100%;
-  height: 100%;
   padding: 0;
   position: fixed;
   inset: 0;
-  z-index: 18;
+  z-index: 75;
   border: 0;
-  background: rgba(22, 20, 17, 0.28);
+  background: rgba(31, 35, 30, 0.22);
+  visibility: hidden;
   opacity: 0;
+  backdrop-filter: blur(0);
   pointer-events: none;
-  transition: opacity 160ms ease;
+  transition:
+    opacity 0.18s ease,
+    backdrop-filter 0.18s ease,
+    visibility 0.18s ease;
 }
 
 .overlayBackdropVisible {
+  visibility: visible;
   opacity: 1;
   pointer-events: auto;
+}
+
+.overlaySidebarMode {
+  backdrop-filter: blur(7px);
+}
+
+.overlayDocumentsMode {
+  background: rgba(28, 31, 26, 0.22);
+  backdrop-filter: blur(9px);
 }
 
 .sidebar {
@@ -35,6 +53,7 @@
   display: flex;
   flex-direction: column;
   position: relative;
+  z-index: 30;
 }
 
 .sidebar::before,
@@ -47,7 +66,10 @@
 .sidebar::before {
   inset: 0 0 auto;
   height: 220px;
-  background: linear-gradient(160deg, color-mix(in srgb, var(--accent) 8%, transparent), transparent 70%);
+  background-image: var(--pattern-image);
+  background-size: 460px 307px;
+  opacity: calc(var(--pattern-opacity) * 0.14);
+  mask-image: linear-gradient(#000, transparent);
 }
 
 .sidebarHeader {
@@ -64,7 +86,11 @@
   gap: 12px;
 }
 
-.iconButton {
+.sidebarBrand {
+  min-width: 0;
+}
+
+.sidebarToggle {
   width: 31px;
   height: 31px;
   padding: 0;
@@ -77,18 +103,27 @@
   cursor: pointer;
 }
 
-.iconButton:disabled,
+.sidebarToggle svg {
+  width: 18px;
+  height: 18px;
+}
+
+.sidebarToggleExpand {
+  display: none;
+}
+
+.sidebarToggle:disabled,
 .newChatButton:disabled,
 .documentsButton:disabled,
 .mobileMenuButton:disabled {
   cursor: default;
 }
 
-.iconButton:not(:disabled):hover,
+.sidebarToggle:not(:disabled):hover,
 .profileTrigger:hover,
 .documentsButton:not(:disabled):hover,
 .mobileMenuButton:hover,
-.logoutButton:hover {
+.mobileDocumentButton:hover {
   border-color: var(--line-strong);
 }
 
@@ -125,8 +160,18 @@
   display: grid;
   place-items: center;
   flex: 0 0 auto;
-  font-size: 18px;
-  line-height: 1;
+}
+
+.newChatIcon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.newChatLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .sidebarScroll {
@@ -154,6 +199,73 @@
   z-index: 2;
 }
 
+.themeRow {
+  min-height: 40px;
+  padding: 0 8px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.themeLabel {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.sidebarThemeToggle {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--paper-soft);
+  color: var(--muted);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  position: relative;
+  transition:
+    background 0.14s ease,
+    border-color 0.14s ease,
+    color 0.14s ease;
+}
+
+.sidebarThemeToggle:hover {
+  border-color: var(--line-strong);
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.sidebarThemeToggle svg {
+  width: 15px;
+  height: 15px;
+  position: absolute;
+  transition:
+    opacity 0.15s ease,
+    transform 0.18s ease;
+}
+
+.sidebarThemeSun {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.sidebarThemeMoon {
+  opacity: 0;
+  transform: scale(0.72) rotate(-12deg);
+}
+
+[data-docchat-theme="green"] .sidebarThemeSun {
+  opacity: 0;
+  transform: scale(0.72) rotate(12deg);
+}
+
+[data-docchat-theme="green"] .sidebarThemeMoon {
+  opacity: 1;
+  transform: scale(1);
+}
+
 .profileTrigger {
   width: 100%;
   height: 42px;
@@ -166,6 +278,11 @@
   align-items: center;
   gap: 9px;
   cursor: pointer;
+}
+
+.profileTrigger:hover {
+  border-color: var(--line-soft);
+  background: var(--paper-soft);
 }
 
 .avatar {
@@ -197,39 +314,92 @@
 }
 
 .accountMenu {
-  width: calc(100% - 18px);
-  padding: 6px;
+  width: 198px;
+  padding: 7px;
   position: absolute;
-  left: 9px;
-  bottom: 61px;
+  right: 8px;
+  bottom: 58px;
+  z-index: 112;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--paper);
-  box-shadow: var(--shadow-soft);
+  box-shadow: var(--shadow-panel);
 }
 
 .accountMenuOpen {
   display: block;
 }
 
-.logoutButton {
-  width: 100%;
-  min-height: 34px;
-  padding: 0 10px;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--ink);
+.accountMenuHead {
+  padding: 8px 8px 10px;
   display: flex;
   align-items: center;
+  gap: 9px;
+}
+
+.accountIdentity strong {
+  color: var(--ink);
+  display: block;
   font-size: 12px;
-  font-weight: 650;
+}
+
+.accountIdentity span {
+  margin-top: 2px;
+  color: var(--subtle);
+  display: block;
+  font-size: 9.2px;
+}
+
+.accountMenuList {
+  padding-top: 5px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.workspaceAction,
+.logoutButton {
+  width: 100%;
+  height: 35px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ink-soft);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 500;
   cursor: pointer;
 }
 
+.workspaceAction:hover,
+.logoutButton:hover {
+  background: var(--paper-soft);
+  color: var(--ink);
+}
+
+.workspaceAction:disabled,
 .logoutButton:disabled {
   color: var(--subtle);
   cursor: default;
+}
+
+.workspaceAction:disabled:hover,
+.logoutButton:disabled:hover {
+  background: transparent;
+  color: var(--subtle);
+}
+
+.logoutButton {
+  color: var(--danger);
+}
+
+.menuIcon {
+  width: 14px;
+  height: 14px;
+  display: block;
+  flex: 0 0 auto;
 }
 
 .main {
@@ -247,11 +417,9 @@
   top: -100px;
   width: 720px;
   height: 410px;
-  background: repeating-linear-gradient(
-    145deg,
-    color-mix(in srgb, var(--accent) 6%, transparent) 0 1px,
-    transparent 1px 34px
-  );
+  background-image: var(--pattern-image);
+  background-size: 700px 467px;
+  opacity: calc(var(--pattern-opacity) * 0.12);
   mask-image: linear-gradient(145deg, #000, transparent 76%);
 }
 
@@ -263,13 +431,14 @@
   align-items: center;
   gap: 14px;
   position: relative;
-  z-index: 2;
+  z-index: 20;
   border-bottom: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
   background: color-mix(in srgb, var(--canvas) 86%, transparent);
   backdrop-filter: blur(14px);
 }
 
 .mobileMenuButton,
+.mobileDocumentButton,
 .mobileBrand {
   display: none;
 }
@@ -299,7 +468,11 @@
   color: var(--action-contrast);
   display: grid;
   place-items: center;
-  font-size: 13px;
+}
+
+.documentsButtonIcon svg {
+  width: 13px;
+  height: 13px;
 }
 
 .documentsButtonCopy {
@@ -345,45 +518,269 @@
   overflow: hidden;
 }
 
-@media (max-width: 860px) {
+.sheetPattern {
+  position: absolute;
+  right: -80px;
+  top: -70px;
+  width: 620px;
+  height: 330px;
+  background-image: var(--pattern-image);
+  background-size: 620px 413px;
+  opacity: calc(var(--pattern-opacity) * 0.1);
+  mask-image: linear-gradient(145deg, #000, transparent 78%);
+  pointer-events: none;
+}
+
+.sidebarCollapsed .sidebarHeader {
+  padding: 12px 8px 8px;
+}
+
+.sidebarCollapsed .sidebarBrand,
+.sidebarCollapsed .sidebarSectionTitle,
+.sidebarCollapsed .newChatLabel,
+.sidebarCollapsed .sidebarScroll,
+.sidebarCollapsed .themeLabel,
+.sidebarCollapsed .profileName,
+.sidebarCollapsed .profileMore {
+  display: none;
+}
+
+.sidebarCollapsed .sidebarBrandRow {
+  justify-content: center;
+}
+
+.sidebarCollapsed .sidebarToggle {
+  border-color: var(--line);
+  background: var(--paper);
+}
+
+.sidebarCollapsed .sidebarToggleCollapse {
+  display: none;
+}
+
+.sidebarCollapsed .sidebarToggleExpand {
+  display: block;
+}
+
+.sidebarCollapsed .newChatButton {
+  width: 40px;
+  height: 40px;
+  margin: 12px auto 0;
+  padding: 0;
+  justify-content: center;
+}
+
+.sidebarCollapsed .newChatIcon {
+  width: 32px;
+  height: 32px;
+}
+
+.sidebarCollapsed .sidebarFooter {
+  padding: 8px;
+}
+
+.sidebarCollapsed .themeRow {
+  padding: 0 0 8px;
+  justify-content: center;
+}
+
+.sidebarCollapsed .sidebarThemeToggle {
+  width: 34px;
+  height: 34px;
+}
+
+.sidebarCollapsed .profileTrigger {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  max-width: 40px;
+  margin: 0 auto;
+  padding: 0;
+  justify-content: center;
+}
+
+.sidebarCollapsed .accountMenu {
+  left: calc(100% + 8px);
+  right: auto;
+  bottom: 8px;
+}
+
+@media (max-width: 1050px) and (min-width: 768px) {
   .appView {
-    grid-template-columns: 1fr;
+    --sidebar-width: 232px;
+    --chat-width: 720px;
+  }
+
+  .topbar {
+    padding-left: 22px;
+  }
+}
+
+@media (max-width: 767px) {
+  .appView {
+    width: 100vw;
+    height: 100dvh;
+    display: block;
   }
 
   .sidebar {
-    width: min(var(--sidebar-width), calc(100vw - 44px));
+    width: min(80vw, 300px);
     position: fixed;
-    inset: 0 auto 0 0;
-    z-index: 22;
-    transform: translateX(-100%);
-    transition: transform 180ms ease;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 90;
+    transform: translateX(-102%);
+    transition: transform 0.22s ease;
+    box-shadow: 26px 0 70px rgba(39, 36, 29, 0.2);
   }
 
   .sidebarOpen {
     transform: translateX(0);
   }
 
+  .sidebarToggle {
+    display: none;
+  }
+
+  .sidebarCollapsed .sidebarBrand,
+  .sidebarCollapsed .sidebarSectionTitle,
+  .sidebarCollapsed .newChatLabel,
+  .sidebarCollapsed .sidebarScroll,
+  .sidebarCollapsed .themeLabel,
+  .sidebarCollapsed .profileName,
+  .sidebarCollapsed .profileMore {
+    display: block;
+  }
+
+  .sidebarCollapsed .sidebarHeader {
+    padding: 17px 14px 10px;
+  }
+
+  .sidebarCollapsed .sidebarBrandRow {
+    justify-content: space-between;
+  }
+
+  .sidebarCollapsed .newChatButton {
+    width: 100%;
+    height: 41px;
+    margin: 9px 0 0;
+    padding: 0 11px;
+    justify-content: flex-start;
+  }
+
+  .sidebarCollapsed .newChatIcon {
+    width: 21px;
+    height: 21px;
+  }
+
+  .sidebarCollapsed .sidebarFooter {
+    padding: 9px 9px 11px;
+  }
+
+  .sidebarCollapsed .themeRow {
+    padding: 0 8px 8px;
+    justify-content: space-between;
+  }
+
+  .sidebarCollapsed .profileTrigger {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    height: 42px;
+    margin: 0;
+    padding: 0 9px;
+    justify-content: flex-start;
+  }
+
+  .main {
+    width: 100vw;
+    height: 100dvh;
+  }
+
   .topbar {
-    padding: 0 14px;
+    height: 56px;
+    min-height: 56px;
+    padding: 0 11px;
+    gap: 8px;
   }
 
   .mobileMenuButton {
-    width: 38px;
-    height: 38px;
-    border: 1px solid var(--line);
+    width: 35px;
+    height: 35px;
+    padding: 0;
+    border: 1px solid transparent;
     border-radius: 10px;
-    background: var(--paper);
+    background: transparent;
     color: var(--ink);
     display: grid;
     place-items: center;
     cursor: pointer;
   }
 
+  .mobileDocumentButton {
+    width: 35px;
+    height: 35px;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--ink);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+  }
+
+  .mobileMenuButton:hover,
+  .mobileDocumentButton:hover {
+    border-color: var(--line);
+    background: var(--paper-soft);
+  }
+
+  .mobileDocumentButton svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .hamburgerSleek {
+    width: 17px;
+    height: 14px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+  }
+
+  .hamburgerSleek span {
+    height: 1.5px;
+    border-radius: 99px;
+    background: currentColor;
+  }
+
+  .hamburgerSleek span:first-child {
+    width: 16px;
+  }
+
+  .hamburgerSleek span:last-child {
+    width: 10px;
+  }
+
   .mobileBrand {
     display: block;
+    flex: 1;
+    text-align: center;
     color: var(--ink);
     font-size: 13px;
-    font-weight: 720;
+    font-weight: 730;
+  }
+
+  .topbarSpacer,
+  .documentsButton {
+    display: none;
+  }
+
+  .sheetPattern {
+    height: 160px;
   }
 }
 

@@ -429,55 +429,50 @@
   }
 }
 
-@media (max-width: 860px) {
+@media (max-width: 767px) {
   .loginView {
     align-items: stretch;
-    padding: 18px;
+    padding: 14px;
   }
 
   .loginShell {
-    min-height: auto;
+    height: 100%;
+    min-height: 0;
     grid-template-columns: 1fr;
+    border-radius: 20px;
   }
 
   .formPanel {
-    padding: 28px 24px 26px;
+    padding: 24px 22px 22px;
   }
 
   .copy {
-    padding-top: 54px;
+    padding-top: 46px;
+  }
+
+  .copy h1 {
+    font-size: 31px;
+  }
+
+  .loginForm {
+    margin-top: 28px;
+  }
+
+  .formNote {
+    padding-top: 30px;
   }
 
   .visualPanel {
-    min-height: 300px;
-    border-left: 0;
-    border-top: 1px solid var(--line);
+    display: none;
   }
 
   .loginFooter {
     bottom: 5px;
     font-size: 8px;
   }
-
-  .visualCopy {
-    margin-top: 48px;
-  }
-
-  .sculpture {
-    right: 20px;
-    bottom: 48px;
-    width: 230px;
-    height: 172px;
-    opacity: 0.85;
-  }
 }
 
 @media (max-width: 560px) {
-  .loginView {
-    min-height: 100dvh;
-    padding: 0;
-  }
-
   .loginShell {
     min-height: 100dvh;
     border: 0;
@@ -486,14 +481,6 @@
 
   .formPanel {
     min-height: 100dvh;
-  }
-
-  .visualPanel {
-    display: none;
-  }
-
-  .copy {
-    padding-top: 72px;
   }
 }
 

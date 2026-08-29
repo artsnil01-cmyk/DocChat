@@ -4,7 +4,7 @@
   position: fixed;
   top: 18px;
   right: 18px;
-  z-index: 20;
+  z-index: 80;
   border: 1px solid var(--line);
   border-radius: 22px;
   background: var(--paper);
@@ -13,7 +13,7 @@
   flex-direction: column;
   overflow: hidden;
   transform: translateX(calc(100% + 32px));
-  transition: transform 180ms ease;
+  transition: transform 0.22s ease;
 }
 
 .panelOpen {
@@ -22,12 +22,28 @@
 
 .panelHeader {
   min-height: 66px;
-  padding: 0 17px;
+  padding: 0 15px 0 17px;
   border-bottom: 1px solid var(--line);
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 9px;
+  position: relative;
+  overflow: hidden;
+}
+
+.panelHeader::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--pattern-image);
+  background-size: 470px 313px;
+  opacity: calc(var(--pattern-opacity) * 0.22);
+  mask-image: linear-gradient(90deg, #000, transparent 92%);
+}
+
+.panelHeader > * {
+  position: relative;
+  z-index: 1;
 }
 
 .panelTitle {
@@ -50,23 +66,36 @@
   place-items: center;
 }
 
+.panelTitleIcon svg {
+  width: 13px;
+  height: 13px;
+}
+
+.panelSpacer {
+  flex: 1;
+}
+
 .closeButton {
-  width: 32px;
-  height: 32px;
+  width: 31px;
+  height: 31px;
   padding: 0;
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  background: var(--paper-soft);
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
   color: var(--muted);
   display: grid;
   place-items: center;
-  font-size: 18px;
-  line-height: 1;
   cursor: pointer;
 }
 
 .closeButton:hover {
-  border-color: var(--line-strong);
+  background: var(--paper-soft);
+  color: var(--ink);
+}
+
+.closeButton svg {
+  width: 16px;
+  height: 16px;
 }
 
 .panelBody {
@@ -83,12 +112,36 @@
   font-size: 11.5px;
 }
 
-@media (max-width: 860px) {
+@media (max-width: 767px) {
   .panel {
-    width: min(410px, calc(100vw - 28px));
-    height: min(620px, calc(100dvh - 28px));
-    top: 14px;
-    right: 14px;
+    width: calc(100vw - 24px);
+    max-width: 410px;
+    height: auto;
+    max-height: min(78dvh, 620px);
+    top: 50%;
+    left: 50%;
+    right: auto;
     border-radius: 20px;
+    transform: none;
+    translate: -50% -50%;
+    scale: 0.985;
+    opacity: 0;
+    pointer-events: none;
+    transition:
+      scale 0.18s ease,
+      opacity 0.18s ease;
+  }
+
+  .panelOpen {
+    transform: none;
+    translate: -50% -50%;
+    scale: 1;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .panelBody {
+    flex: 0 1 auto;
+    max-height: calc(78dvh - 70px);
   }
 }
