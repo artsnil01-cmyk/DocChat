@@ -9,10 +9,10 @@ import {
 } from "@/lib/documents/service/lifecycle";
 import {
   acquireDocumentProcessingLock,
-  releaseDocumentProcessingLock,
 } from "@/lib/documents/service/locks";
 import { getWorkspaceDocumentRecord } from "@/lib/documents/service/queries";
 import { toDocumentView, type DocumentView } from "@/lib/documents/service/views";
+import { runDocumentIngestion } from "@/lib/rag/ingestion";
 import type { Document } from "@/models/document";
 
 export type ProcessDocumentResult =
@@ -80,10 +80,10 @@ export async function processDocument(params: {
     progress: 0,
   });
 
-  await releaseDocumentProcessingLock({
+  await runDocumentIngestion({
     workspaceId: params.workspaceId,
     documentId: params.documentId,
-    token: lockResult.lock.token,
+    lockToken: lockResult.lock.token,
   });
 
   if (!processingDocument) {
