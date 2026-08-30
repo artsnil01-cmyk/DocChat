@@ -2,7 +2,7 @@ import "server-only";
 
 import type { ObjectId } from "mongodb";
 
-import { chatsCollection } from "@/lib/db/collections";
+import { chatsCollection, documentsCollection } from "@/lib/db/collections";
 
 export async function attachDocumentToChat(params: {
   workspaceId: string;
@@ -65,4 +65,39 @@ export async function replaceChatDocumentReference(params: {
   );
 
   return result.matchedCount === 1;
+}
+
+export async function removeDocumentFromChat(params: {
+  workspaceId: string;
+  chatId: ObjectId;
+  documentId: ObjectId;
+}): Promise<"removed" | "not_found"> {
+  const documents = await documentsCollection();
+  const document = await documents.findOne({
+    _id: params.documentId,
+    workspaceId: params.workspaceId,
+  });
+
+  if (!document) {
+    return "not_found";
+  }
+
+  const chats = await chatsCollection();
+  const result = await chats.updateOne(
+    {
+      _id: params.chatId,
+      workspaceId: params.workspaceId,
+      documentIds: params.documentId,
+    },
+    {
+      $pull: {
+        documentIds: params.documentId,
+      },
+      $set: {
+        updatedAt: new Date(),
+      },
+    },
+  );
+
+  return result.modifiedCount === 1 ? "removed" : "not_found";
 }

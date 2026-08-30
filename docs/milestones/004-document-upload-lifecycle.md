@@ -23,7 +23,7 @@ Implement secure PDF upload, workspace-local deduplication, chat attachment, sta
 - [x] Delete untrusted uploads when backend hash does not match.
 - [x] Handle late duplicate discovery.
 - [x] Implement document status polling.
-- [ ] Remove document reference from a chat without deleting shared document data.
+- [x] Remove document reference from a chat without deleting shared document data.
 - [ ] Garbage-collect chunks, Blob, and document record when final chat reference is removed.
 
 ## Validation
