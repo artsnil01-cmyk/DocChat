@@ -10,6 +10,8 @@ PDF bytes should not pass through the Vercel Function body. The backend authoriz
 - `lib/documents/storage.ts` owns Vercel Blob interactions.
 - `lib/documents/service/` owns document state transitions.
 
+For local Blob callback testing, expose the dev server with a public tunnel and set `VERCEL_BLOB_CALLBACK_URL` before starting Next.js. Blob callbacks cannot reach `localhost`.
+
 ## Statuses
 
 ```ts
