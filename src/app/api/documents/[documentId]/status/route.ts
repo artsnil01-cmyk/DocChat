@@ -51,6 +51,7 @@ export async function GET(_request: Request, context: DocumentStatusRouteContext
       stage: document.stage,
       progress: document.progress,
       error: document.error,
+      nextAction: document.nextAction,
       updatedAt: document.updatedAt,
     },
   });

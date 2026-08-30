@@ -62,3 +62,5 @@ If the removed reference was the final chat reference, the application deletes:
 - document record.
 
 Do not add a processing jobs collection initially. The document record tracks lifecycle with `status`, `stage`, `progress`, and `error`.
+
+Document responses include `nextAction`: `upload`, `process`, `wait`, or `none`.

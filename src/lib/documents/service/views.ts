@@ -1,3 +1,7 @@
+import {
+  getDocumentNextAction,
+  type DocumentNextAction,
+} from "@/lib/documents/service/actions";
 import type { Document } from "@/models/document";
 
 export type DocumentView = {
@@ -12,6 +16,7 @@ export type DocumentView = {
   stage?: Document["stage"];
   progress?: number;
   error?: Document["error"];
+  nextAction: DocumentNextAction;
   createdAt: string;
   updatedAt: string;
 };
@@ -29,6 +34,7 @@ export function toDocumentView(document: Document): DocumentView {
     stage: document.stage,
     progress: document.progress,
     error: document.error,
+    nextAction: getDocumentNextAction(document),
     createdAt: document.createdAt.toISOString(),
     updatedAt: document.updatedAt.toISOString(),
   };
