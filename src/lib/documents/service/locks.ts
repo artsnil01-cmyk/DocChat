@@ -22,7 +22,12 @@ export type AcquireDocumentProcessingLockResult =
     }
   | {
       ok: false;
-      reason: "not_found" | "not_processable" | "locked";
+      reason: "not_found" | "not_processable";
+    }
+  | {
+      ok: false;
+      reason: "upload_required" | "ready" | "locked";
+      document: Document;
     };
 
 export async function acquireDocumentProcessingLock(params: {
@@ -35,7 +40,15 @@ export async function acquireDocumentProcessingLock(params: {
     return { ok: false, reason: "not_found" };
   }
 
-  if (!document.blobPathname || !canAcquireProcessingLock(document.status)) {
+  if (!document.blobPathname) {
+    return { ok: false, reason: "upload_required", document };
+  }
+
+  if (document.status === "ready") {
+    return { ok: false, reason: "ready", document };
+  }
+
+  if (!canAcquireProcessingLock(document.status)) {
     return { ok: false, reason: "not_processable" };
   }
 
@@ -69,7 +82,7 @@ export async function acquireDocumentProcessingLock(params: {
   );
 
   if (!result) {
-    return { ok: false, reason: "locked" };
+    return { ok: false, reason: "locked", document };
   }
 
   return {
