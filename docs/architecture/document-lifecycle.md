@@ -4,8 +4,8 @@ PDF bytes should not pass through the Vercel Function body. The backend authoriz
 
 ## Responsibilities
 
-- `app/api/upload/route.ts` accepts preflight metadata and creates or reuses a document record.
-- `app/api/upload/blob/route.ts` handles Vercel Blob token generation and completion callbacks.
+- `app/api/documents/route.ts` accepts preflight metadata and creates or reuses a document record.
+- `app/api/documents/blob/route.ts` handles Vercel Blob token generation and completion callbacks.
 - `lib/documents/schemas.ts` validates file type, size, and metadata.
 - `lib/documents/storage.ts` owns Vercel Blob interactions.
 - `lib/documents/service.ts` owns document state transitions.

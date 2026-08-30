@@ -13,8 +13,8 @@ import {
   authorizeDocumentBlobUpload,
   completeDocumentBlobUpload,
 } from "@/lib/documents/service";
-import { serverEnv } from "@/lib/env/server";
 import { getBlobMetadata } from "@/lib/documents/storage";
+import { serverEnv } from "@/lib/env/server";
 
 export async function POST(request: NextRequest) {
   const body = await readJson(request);

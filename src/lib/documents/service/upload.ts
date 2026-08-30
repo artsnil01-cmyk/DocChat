@@ -26,7 +26,7 @@ export type UploadPreflightResult = {
 
 export type DocumentUploadInstructions = {
   pathname: string;
-  handleUploadUrl: "/api/upload/blob";
+  handleUploadUrl: "/api/documents/blob";
 };
 
 export type DocumentUploadAuthorizationResult =
@@ -236,6 +236,6 @@ async function resetFailedDocumentToPendingUpload(
 function getUploadInstructions(documentId: ObjectId): DocumentUploadInstructions {
   return {
     pathname: buildDocumentBlobPathname(documentId.toHexString()),
-    handleUploadUrl: "/api/upload/blob",
+    handleUploadUrl: "/api/documents/blob",
   };
 }
