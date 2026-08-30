@@ -5,6 +5,10 @@ import { ObjectId } from "mongodb";
 import { chatsCollection, documentsCollection } from "@/lib/db/collections";
 import { attachDocumentToChat } from "@/lib/documents/service/attachments";
 import { resolveWorkspaceDocumentName } from "@/lib/documents/service/naming";
+import {
+  findWorkspaceDocumentByContentHash,
+  getWorkspaceDocumentRecord,
+} from "@/lib/documents/service/queries";
 import { toDocumentView, type DocumentView } from "@/lib/documents/service/views";
 import {
   buildDocumentBlobPathname,
@@ -62,8 +66,7 @@ export async function preflightDocumentUpload(params: {
     return null;
   }
 
-  const documents = await documentsCollection();
-  const existingDocument = await documents.findOne({
+  const existingDocument = await findWorkspaceDocumentByContentHash({
     workspaceId: params.workspaceId,
     contentHash: params.contentHash,
   });
@@ -107,9 +110,8 @@ export async function authorizeDocumentBlobUpload(params: {
     return { ok: false, reason: "not_found" };
   }
 
-  const documents = await documentsCollection();
-  const document = await documents.findOne({
-    _id: params.documentId,
+  const document = await getWorkspaceDocumentRecord({
+    documentId: params.documentId,
     workspaceId: chat.workspaceId,
   });
 

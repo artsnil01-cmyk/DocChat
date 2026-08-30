@@ -2,11 +2,12 @@ import "server-only";
 
 import type { ObjectId } from "mongodb";
 
-import { chatsCollection, documentsCollection } from "@/lib/db/collections";
+import { chatsCollection } from "@/lib/db/collections";
 import {
   deleteDocumentData,
   hasDocumentChatReferences,
 } from "@/lib/documents/service/cleanup";
+import { getWorkspaceDocumentRecord } from "@/lib/documents/service/queries";
 
 export async function attachDocumentToChat(params: {
   workspaceId: string;
@@ -76,11 +77,7 @@ export async function removeDocumentFromChat(params: {
   chatId: ObjectId;
   documentId: ObjectId;
 }): Promise<"removed" | "removed_and_deleted" | "not_found"> {
-  const documents = await documentsCollection();
-  const document = await documents.findOne({
-    _id: params.documentId,
-    workspaceId: params.workspaceId,
-  });
+  const document = await getWorkspaceDocumentRecord(params);
 
   if (!document) {
     return "not_found";

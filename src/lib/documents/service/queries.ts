@@ -57,11 +57,29 @@ export async function getWorkspaceDocument(params: {
   workspaceId: string;
   documentId: ObjectId;
 }): Promise<DocumentView | null> {
+  const document = await getWorkspaceDocumentRecord(params);
+
+  return document ? toDocumentView(document) : null;
+}
+
+export async function getWorkspaceDocumentRecord(params: {
+  workspaceId: string;
+  documentId: ObjectId;
+}): Promise<Document | null> {
   const documents = await documentsCollection();
-  const document = await documents.findOne({
+  return documents.findOne({
     _id: params.documentId,
     workspaceId: params.workspaceId,
   });
+}
 
-  return document ? toDocumentView(document) : null;
+export async function findWorkspaceDocumentByContentHash(params: {
+  workspaceId: string;
+  contentHash: string;
+}): Promise<Document | null> {
+  const documents = await documentsCollection();
+  return documents.findOne({
+    workspaceId: params.workspaceId,
+    contentHash: params.contentHash,
+  });
 }

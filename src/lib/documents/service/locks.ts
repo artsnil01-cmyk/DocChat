@@ -6,6 +6,7 @@ import type { ObjectId } from "mongodb";
 
 import { documentConfig } from "@/config/documents";
 import { documentsCollection } from "@/lib/db/collections";
+import { getWorkspaceDocumentRecord } from "@/lib/documents/service/queries";
 import type { Document } from "@/models/document";
 
 export type AcquiredDocumentProcessingLock = {
@@ -28,11 +29,7 @@ export async function acquireDocumentProcessingLock(params: {
   workspaceId: string;
   documentId: ObjectId;
 }): Promise<AcquireDocumentProcessingLockResult> {
-  const documents = await documentsCollection();
-  const document = await documents.findOne({
-    _id: params.documentId,
-    workspaceId: params.workspaceId,
-  });
+  const document = await getWorkspaceDocumentRecord(params);
 
   if (!document) {
     return { ok: false, reason: "not_found" };
@@ -48,6 +45,7 @@ export async function acquireDocumentProcessingLock(params: {
     expiresAt: new Date(now.getTime() + documentConfig.processingLockLifetimeMs),
   };
 
+  const documents = await documentsCollection();
   const result = await documents.findOneAndUpdate(
     {
       _id: params.documentId,

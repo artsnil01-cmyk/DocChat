@@ -5,6 +5,10 @@ import { ObjectId } from "mongodb";
 import { documentsCollection } from "@/lib/db/collections";
 import { replaceChatDocumentReference } from "@/lib/documents/service/attachments";
 import { deletePendingUpload } from "@/lib/documents/service/cleanup";
+import {
+  findWorkspaceDocumentByContentHash,
+  getWorkspaceDocumentRecord,
+} from "@/lib/documents/service/queries";
 import { toDocumentView, type DocumentView } from "@/lib/documents/service/views";
 import {
   buildDocumentBlobPathname,
@@ -33,9 +37,8 @@ export async function completeDocumentBlobUpload(params: {
   tokenPayload: DocumentUploadTokenPayload;
   blob: BlobMetadata;
 }): Promise<CompleteDocumentUploadResult> {
-  const documents = await documentsCollection();
-  const document = await documents.findOne({
-    _id: new ObjectId(params.tokenPayload.documentId),
+  const document = await getWorkspaceDocumentRecord({
+    documentId: new ObjectId(params.tokenPayload.documentId),
     workspaceId: params.tokenPayload.workspaceId,
   });
 
@@ -77,13 +80,12 @@ export async function completeDocumentBlobUpload(params: {
     return { ok: false, reason: "content_hash_mismatch" };
   }
 
-  const existingDocument = await documents.findOne({
-    _id: { $ne: document._id },
+  const existingDocument = await findWorkspaceDocumentByContentHash({
     workspaceId: document.workspaceId,
     contentHash: verifiedContentHash,
   });
 
-  if (existingDocument) {
+  if (existingDocument && !existingDocument._id.equals(document._id)) {
     await replaceChatDocumentReference({
       workspaceId: document.workspaceId,
       chatId: new ObjectId(params.tokenPayload.chatId),
@@ -104,6 +106,7 @@ export async function completeDocumentBlobUpload(params: {
   }
 
   const now = new Date();
+  const documents = await documentsCollection();
   const result = await documents.findOneAndUpdate(
     {
       _id: document._id,
