@@ -3,6 +3,7 @@ import "server-only";
 import { ObjectId } from "mongodb";
 
 import { documentsCollection } from "@/lib/db/collections";
+import { replaceChatDocumentReference } from "@/lib/documents/service/attachments";
 import { toDocumentView, type DocumentView } from "@/lib/documents/service/views";
 import {
   buildDocumentBlobPathname,
@@ -16,6 +17,7 @@ export type CompleteDocumentUploadResult =
   | {
       ok: true;
       document: DocumentView;
+      duplicate: boolean;
     }
   | {
       ok: false;
@@ -75,6 +77,32 @@ export async function completeDocumentBlobUpload(params: {
     return { ok: false, reason: "content_hash_mismatch" };
   }
 
+  const existingDocument = await documents.findOne({
+    _id: { $ne: document._id },
+    workspaceId: document.workspaceId,
+    contentHash: verifiedContentHash,
+  });
+
+  if (existingDocument) {
+    await replaceChatDocumentReference({
+      workspaceId: document.workspaceId,
+      chatId: new ObjectId(params.tokenPayload.chatId),
+      currentDocumentId: document._id,
+      replacementDocumentId: existingDocument._id,
+    });
+    await deleteDuplicateUpload({
+      documentId: document._id,
+      workspaceId: document.workspaceId,
+      pathname: expectedPathname,
+    });
+
+    return {
+      ok: true,
+      document: toDocumentView(existingDocument),
+      duplicate: true,
+    };
+  }
+
   const now = new Date();
   const result = await documents.findOneAndUpdate(
     {
@@ -104,10 +132,26 @@ export async function completeDocumentBlobUpload(params: {
   return {
     ok: true,
     document: toDocumentView(result),
+    duplicate: false,
   };
 }
 
 async function deleteUntrustedUpload(params: {
+  documentId: ObjectId;
+  workspaceId: string;
+  pathname: string;
+}): Promise<void> {
+  await deleteBlob(params.pathname).catch(() => undefined);
+
+  const documents = await documentsCollection();
+  await documents.deleteOne({
+    _id: params.documentId,
+    workspaceId: params.workspaceId,
+    status: "pending_upload",
+  });
+}
+
+async function deleteDuplicateUpload(params: {
   documentId: ObjectId;
   workspaceId: string;
   pathname: string;
