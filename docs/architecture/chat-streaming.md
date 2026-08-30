@@ -5,7 +5,7 @@ Chats are workspace-scoped and own a persistent/default document scope. Assistan
 ## Responsibilities
 
 - `lib/chat/` owns chat sessions, messages, and generation state.
-- `app/api/chat/route.ts` owns the public chat API boundary.
+- The chat streaming route is added with the first RAG backend implementation.
 - Frontend request state must be scoped by `chatId` and generation/message identifier.
 
 No global single-request state should control all active chats.
