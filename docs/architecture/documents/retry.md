@@ -13,12 +13,12 @@ Document responses include `nextAction`. The UI chooses the retry button behavio
 
 ```mermaid
 flowchart TD
-  A[Document response] --> B{nextAction}
-  B -->|upload| C[Call POST /api/documents]
-  C --> D[Upload through Blob SDK]
-  B -->|process| E[Call POST /api/documents/{documentId}/process]
-  B -->|wait| F[Poll status]
-  B -->|none| G[No retry]
+  A["Document response"] --> B{"nextAction"}
+  B -->|upload| C["Call POST /api/documents"]
+  C --> D["Upload through Blob SDK"]
+  B -->|process| E["Call POST /api/documents/{documentId}/process"]
+  B -->|wait| F["Poll status"]
+  B -->|none| G["No retry"]
 ```
 
 ## Rules
