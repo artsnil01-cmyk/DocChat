@@ -4,11 +4,11 @@ import { ObjectId } from "mongodb";
 
 import { documentsCollection } from "@/lib/db/collections";
 import { replaceChatDocumentReference } from "@/lib/documents/service/attachments";
+import { deletePendingUpload } from "@/lib/documents/service/cleanup";
 import { toDocumentView, type DocumentView } from "@/lib/documents/service/views";
 import {
   buildDocumentBlobPathname,
   calculateBlobSha256Hex,
-  deleteBlob,
   type BlobMetadata,
 } from "@/lib/documents/storage";
 import type { DocumentUploadTokenPayload } from "@/lib/documents/service/upload";
@@ -68,7 +68,7 @@ export async function completeDocumentBlobUpload(params: {
   const verifiedContentHash = await calculateBlobSha256Hex(expectedPathname);
 
   if (verifiedContentHash !== document.contentHash) {
-    await deleteUntrustedUpload({
+    await deletePendingUpload({
       documentId: document._id,
       workspaceId: document.workspaceId,
       pathname: expectedPathname,
@@ -90,7 +90,7 @@ export async function completeDocumentBlobUpload(params: {
       currentDocumentId: document._id,
       replacementDocumentId: existingDocument._id,
     });
-    await deleteDuplicateUpload({
+    await deletePendingUpload({
       documentId: document._id,
       workspaceId: document.workspaceId,
       pathname: expectedPathname,
@@ -134,34 +134,4 @@ export async function completeDocumentBlobUpload(params: {
     document: toDocumentView(result),
     duplicate: false,
   };
-}
-
-async function deleteUntrustedUpload(params: {
-  documentId: ObjectId;
-  workspaceId: string;
-  pathname: string;
-}): Promise<void> {
-  await deleteBlob(params.pathname).catch(() => undefined);
-
-  const documents = await documentsCollection();
-  await documents.deleteOne({
-    _id: params.documentId,
-    workspaceId: params.workspaceId,
-    status: "pending_upload",
-  });
-}
-
-async function deleteDuplicateUpload(params: {
-  documentId: ObjectId;
-  workspaceId: string;
-  pathname: string;
-}): Promise<void> {
-  await deleteBlob(params.pathname).catch(() => undefined);
-
-  const documents = await documentsCollection();
-  await documents.deleteOne({
-    _id: params.documentId,
-    workspaceId: params.workspaceId,
-    status: "pending_upload",
-  });
 }

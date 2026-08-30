@@ -56,5 +56,8 @@ export async function DELETE(request: Request, context: DocumentRouteContext) {
     );
   }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({
+    ok: true,
+    deletedDocumentData: result === "removed_and_deleted",
+  });
 }

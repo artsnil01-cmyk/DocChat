@@ -24,7 +24,7 @@ Implement secure PDF upload, workspace-local deduplication, chat attachment, sta
 - [x] Handle late duplicate discovery.
 - [x] Implement document status polling.
 - [x] Remove document reference from a chat without deleting shared document data.
-- [ ] Garbage-collect chunks, Blob, and document record when final chat reference is removed.
+- [x] Garbage-collect chunks, Blob, and document record when final chat reference is removed.
 
 ## Validation
 
@@ -32,5 +32,5 @@ Implement secure PDF upload, workspace-local deduplication, chat attachment, sta
 - [ ] Same filename with different content creates a distinct document.
 - [ ] Same-name display names remain understandable.
 - [ ] Removing from one chat keeps documents used by another chat.
-- [ ] Final-reference removal deletes document data.
+- [x] Final-reference removal deletes document data.
 - [ ] Status polling exposes public processing stages.

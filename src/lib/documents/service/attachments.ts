@@ -3,6 +3,10 @@ import "server-only";
 import type { ObjectId } from "mongodb";
 
 import { chatsCollection, documentsCollection } from "@/lib/db/collections";
+import {
+  deleteDocumentData,
+  hasDocumentChatReferences,
+} from "@/lib/documents/service/cleanup";
 
 export async function attachDocumentToChat(params: {
   workspaceId: string;
@@ -71,7 +75,7 @@ export async function removeDocumentFromChat(params: {
   workspaceId: string;
   chatId: ObjectId;
   documentId: ObjectId;
-}): Promise<"removed" | "not_found"> {
+}): Promise<"removed" | "removed_and_deleted" | "not_found"> {
   const documents = await documentsCollection();
   const document = await documents.findOne({
     _id: params.documentId,
@@ -82,6 +86,30 @@ export async function removeDocumentFromChat(params: {
     return "not_found";
   }
 
+  const removed = await removeChatDocumentReference(params);
+
+  if (!removed) {
+    return "not_found";
+  }
+
+  const stillReferenced = await hasDocumentChatReferences({
+    workspaceId: params.workspaceId,
+    documentId: params.documentId,
+  });
+
+  if (stillReferenced) {
+    return "removed";
+  }
+
+  await deleteDocumentData(document);
+  return "removed_and_deleted";
+}
+
+async function removeChatDocumentReference(params: {
+  workspaceId: string;
+  chatId: ObjectId;
+  documentId: ObjectId;
+}): Promise<boolean> {
   const chats = await chatsCollection();
   const result = await chats.updateOne(
     {
@@ -99,5 +127,5 @@ export async function removeDocumentFromChat(params: {
     },
   );
 
-  return result.modifiedCount === 1 ? "removed" : "not_found";
+  return result.modifiedCount === 1;
 }
