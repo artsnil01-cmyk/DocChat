@@ -78,15 +78,10 @@ export async function POST(request: NextRequest) {
 
   const result = await preflightDocumentUpload({
     workspaceId,
-    chatId: new ObjectId(parsedBody.data.chatId),
     name: parsedBody.data.name,
     contentHash: parsedBody.data.contentHash,
     sizeBytes: parsedBody.data.sizeBytes,
   });
-
-  if (!result) {
-    return NextResponse.json({ error: "Chat not found." }, { status: 404 });
-  }
 
   return NextResponse.json(
     {

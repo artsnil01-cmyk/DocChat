@@ -2,8 +2,7 @@ import "server-only";
 
 import { ObjectId } from "mongodb";
 
-import { chatsCollection, documentsCollection } from "@/lib/db/collections";
-import { attachDocumentToChat } from "@/lib/documents/service/attachments";
+import { documentsCollection } from "@/lib/db/collections";
 import { resolveWorkspaceDocumentName } from "@/lib/documents/service/naming";
 import {
   findWorkspaceDocumentByContentHash,
@@ -41,7 +40,6 @@ export type DocumentUploadAuthorizationResult =
     };
 
 export type DocumentUploadTokenPayload = {
-  chatId: string;
   documentId: string;
   workspaceId: string;
   pathname: string;
@@ -51,39 +49,20 @@ export type DocumentUploadTokenPayload = {
 
 export async function preflightDocumentUpload(params: {
   workspaceId: string;
-  chatId: ObjectId;
   name: string;
   contentHash: string;
   sizeBytes: number;
-}): Promise<UploadPreflightResult | null> {
-  const chats = await chatsCollection();
-  const chat = await chats.findOne({
-    _id: params.chatId,
-    workspaceId: params.workspaceId,
-  });
-
-  if (!chat) {
-    return null;
-  }
-
+}): Promise<UploadPreflightResult> {
   const existingDocument = await findWorkspaceDocumentByContentHash({
     workspaceId: params.workspaceId,
     contentHash: params.contentHash,
   });
 
   if (existingDocument) {
-    return resolveExistingDocumentPreflight({
-      document: existingDocument,
-      chatId: params.chatId,
-    });
+    return resolveExistingDocumentPreflight(existingDocument);
   }
 
   const document = await createPendingDocument(params);
-  await attachDocumentToChat({
-    workspaceId: params.workspaceId,
-    chatId: params.chatId,
-    documentId: document._id,
-  });
 
   return {
     document: toDocumentView(document),
@@ -95,24 +74,12 @@ export async function preflightDocumentUpload(params: {
 
 export async function authorizeDocumentBlobUpload(params: {
   workspaceId: string;
-  chatId: ObjectId;
   documentId: ObjectId;
   pathname: string;
 }): Promise<DocumentUploadAuthorizationResult> {
-  const chats = await chatsCollection();
-  const chat = await chats.findOne({
-    _id: params.chatId,
-    workspaceId: params.workspaceId,
-    documentIds: params.documentId,
-  });
-
-  if (!chat) {
-    return { ok: false, reason: "not_found" };
-  }
-
   const document = await getWorkspaceDocumentRecord({
     documentId: params.documentId,
-    workspaceId: chat.workspaceId,
+    workspaceId: params.workspaceId,
   });
 
   if (!document) {
@@ -133,7 +100,6 @@ export async function authorizeDocumentBlobUpload(params: {
     ok: true,
     authorization: getPrivatePdfUploadConstraints({ pathname }),
     tokenPayload: {
-      chatId: chat._id.toHexString(),
       documentId: document._id.toHexString(),
       workspaceId: document.workspaceId,
       pathname,
@@ -143,27 +109,20 @@ export async function authorizeDocumentBlobUpload(params: {
   };
 }
 
-async function resolveExistingDocumentPreflight(params: {
-  document: Document;
-  chatId: ObjectId;
-}): Promise<UploadPreflightResult> {
-  await attachDocumentToChat({
-    workspaceId: params.document.workspaceId,
-    chatId: params.chatId,
-    documentId: params.document._id,
-  });
-
-  if (params.document.status === "pending_upload") {
-    return existingDocumentUploadResult(params.document);
-  }
-
-  if (params.document.status === "failed" && !params.document.blobPathname) {
-    const document = await resetFailedDocumentToPendingUpload(params.document);
+async function resolveExistingDocumentPreflight(
+  document: Document,
+): Promise<UploadPreflightResult> {
+  if (document.status === "pending_upload") {
     return existingDocumentUploadResult(document);
   }
 
+  if (document.status === "failed" && !document.blobPathname) {
+    const resetDocument = await resetFailedDocumentToPendingUpload(document);
+    return existingDocumentUploadResult(resetDocument);
+  }
+
   return {
-    document: toDocumentView(params.document),
+    document: toDocumentView(document),
     duplicate: true,
     requiresUpload: false,
   };

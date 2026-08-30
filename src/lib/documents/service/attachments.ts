@@ -3,10 +3,6 @@ import "server-only";
 import type { ObjectId } from "mongodb";
 
 import { chatsCollection } from "@/lib/db/collections";
-import {
-  deleteDocumentData,
-  hasDocumentChatReferences,
-} from "@/lib/documents/service/cleanup";
 import { getWorkspaceDocumentRecord } from "@/lib/documents/service/queries";
 
 export async function attachDocumentToChat(params: {
@@ -33,50 +29,11 @@ export async function attachDocumentToChat(params: {
   return result.matchedCount === 1;
 }
 
-export async function replaceChatDocumentReference(params: {
-  workspaceId: string;
-  chatId: ObjectId;
-  currentDocumentId: ObjectId;
-  replacementDocumentId: ObjectId;
-}): Promise<boolean> {
-  const chats = await chatsCollection();
-  const result = await chats.updateOne(
-    {
-      _id: params.chatId,
-      workspaceId: params.workspaceId,
-      documentIds: params.currentDocumentId,
-    },
-    [
-      {
-        $set: {
-          documentIds: {
-            $setUnion: [
-              {
-                $filter: {
-                  input: "$documentIds",
-                  as: "documentId",
-                  cond: {
-                    $ne: ["$$documentId", params.currentDocumentId],
-                  },
-                },
-              },
-              [params.replacementDocumentId],
-            ],
-          },
-          updatedAt: new Date(),
-        },
-      },
-    ],
-  );
-
-  return result.matchedCount === 1;
-}
-
 export async function removeDocumentFromChat(params: {
   workspaceId: string;
   chatId: ObjectId;
   documentId: ObjectId;
-}): Promise<"removed" | "removed_and_deleted" | "not_found"> {
+}): Promise<"removed" | "not_found"> {
   const document = await getWorkspaceDocumentRecord(params);
 
   if (!document) {
@@ -89,17 +46,7 @@ export async function removeDocumentFromChat(params: {
     return "not_found";
   }
 
-  const stillReferenced = await hasDocumentChatReferences({
-    workspaceId: params.workspaceId,
-    documentId: params.documentId,
-  });
-
-  if (stillReferenced) {
-    return "removed";
-  }
-
-  await deleteDocumentData(document);
-  return "removed_and_deleted";
+  return "removed";
 }
 
 async function removeChatDocumentReference(params: {

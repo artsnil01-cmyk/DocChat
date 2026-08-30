@@ -10,24 +10,47 @@ import {
 import { deleteBlob } from "@/lib/documents/storage";
 import type { Document } from "@/models/document";
 
-export async function hasDocumentChatReferences(params: {
+export type DeleteWorkspaceDocumentResult =
+  | "deleted"
+  | "not_found"
+  | "processing";
+
+export async function deleteWorkspaceDocument(params: {
   workspaceId: string;
   documentId: ObjectId;
-}): Promise<boolean> {
+}): Promise<DeleteWorkspaceDocumentResult> {
+  const documents = await documentsCollection();
+  const document = await documents.findOne({
+    _id: params.documentId,
+    workspaceId: params.workspaceId,
+  });
+
+  if (!document) {
+    return "not_found";
+  }
+
+  if (hasActiveProcessingLock(document)) {
+    return "processing";
+  }
+
   const chats = await chatsCollection();
-  const chat = await chats.findOne(
+  await chats.updateMany(
     {
       workspaceId: params.workspaceId,
       documentIds: params.documentId,
     },
     {
-      projection: {
-        _id: 1,
+      $pull: {
+        documentIds: params.documentId,
+      },
+      $set: {
+        updatedAt: new Date(),
       },
     },
   );
 
-  return Boolean(chat);
+  await deleteDocumentData(document);
+  return "deleted";
 }
 
 export async function deleteDocumentData(document: Document): Promise<void> {
@@ -43,6 +66,12 @@ export async function deleteDocumentData(document: Document): Promise<void> {
     _id: document._id,
     workspaceId: document.workspaceId,
   });
+}
+
+function hasActiveProcessingLock(document: Document): boolean {
+  return Boolean(
+    document.processingLock && document.processingLock.expiresAt > new Date(),
+  );
 }
 
 export async function deletePendingUpload(params: {

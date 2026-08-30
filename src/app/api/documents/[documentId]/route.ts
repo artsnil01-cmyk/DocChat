@@ -7,7 +7,10 @@ import {
   detachDocumentQuerySchema,
   documentRouteParamsSchema,
 } from "@/lib/documents/schemas";
-import { removeDocumentFromChat } from "@/lib/documents/service";
+import {
+  deleteWorkspaceDocument,
+  removeDocumentFromChat,
+} from "@/lib/documents/service";
 
 type DocumentRouteContext = {
   params: Promise<{
@@ -32,11 +35,43 @@ export async function DELETE(request: Request, context: DocumentRouteContext) {
 
   const params = await context.params;
   const parsedParams = documentRouteParamsSchema.safeParse(params);
+  const chatId = new URL(request.url).searchParams.get("chatId");
+
+  if (!parsedParams.success) {
+    return NextResponse.json(
+      { error: "Invalid document route params." },
+      { status: 400 },
+    );
+  }
+
+  if (!chatId) {
+    const result = await deleteWorkspaceDocument({
+      workspaceId,
+      documentId: new ObjectId(parsedParams.data.documentId),
+    });
+
+    if (result === "not_found") {
+      return NextResponse.json({ error: "Document not found." }, { status: 404 });
+    }
+
+    if (result === "processing") {
+      return NextResponse.json(
+        { error: "Document is currently processing." },
+        { status: 409 },
+      );
+    }
+
+    return NextResponse.json({
+      ok: true,
+      deleted: true,
+    });
+  }
+
   const parsedQuery = detachDocumentQuerySchema.safeParse({
-    chatId: new URL(request.url).searchParams.get("chatId"),
+    chatId,
   });
 
-  if (!parsedParams.success || !parsedQuery.success) {
+  if (!parsedQuery.success) {
     return NextResponse.json(
       { error: "Invalid document detach request." },
       { status: 400 },
@@ -58,6 +93,6 @@ export async function DELETE(request: Request, context: DocumentRouteContext) {
 
   return NextResponse.json({
     ok: true,
-    deletedDocumentData: result === "removed_and_deleted",
+    detached: true,
   });
 }

@@ -10,7 +10,6 @@ import {
 } from "@/lib/validation/common";
 
 export const uploadPreflightRequestSchema = z.object({
-  chatId: objectIdStringSchema,
   name: documentNameSchema,
   mimeType: pdfMimeTypeSchema,
   sizeBytes: positiveIntegerSchema.max(documentConfig.maxPdfSizeBytes),
@@ -18,12 +17,10 @@ export const uploadPreflightRequestSchema = z.object({
 });
 
 export const blobUploadClientPayloadSchema = z.object({
-  chatId: objectIdStringSchema,
   documentId: objectIdStringSchema,
 });
 
 export const blobUploadTokenPayloadSchema = z.object({
-  chatId: objectIdStringSchema,
   documentId: objectIdStringSchema,
   workspaceId: z.string().trim().min(1),
   pathname: z.string().trim().min(1),

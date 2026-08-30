@@ -52,7 +52,6 @@ export async function POST(request: NextRequest) {
 
       const result = await authorizeDocumentBlobUpload({
         workspaceId,
-        chatId: new ObjectId(parsedPayload.data.chatId),
         documentId: new ObjectId(parsedPayload.data.documentId),
         pathname,
       });
