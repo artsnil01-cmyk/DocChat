@@ -35,7 +35,7 @@ export async function acquireDocumentProcessingLock(params: {
     return { ok: false, reason: "not_found" };
   }
 
-  if (!document.blobPathname || !isProcessableStatus(document.status)) {
+  if (!document.blobPathname || !canAcquireProcessingLock(document.status)) {
     return { ok: false, reason: "not_processable" };
   }
 
@@ -106,6 +106,6 @@ export async function releaseDocumentProcessingLock(params: {
   return result.modifiedCount === 1;
 }
 
-function isProcessableStatus(status: Document["status"]): boolean {
+function canAcquireProcessingLock(status: Document["status"]): boolean {
   return status === "processing" || status === "failed";
 }

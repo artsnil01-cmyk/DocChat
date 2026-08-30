@@ -36,4 +36,5 @@ Implement secure PDF upload, workspace-local deduplication, chat attachment, sta
 - [ ] Same-name display names remain understandable.
 - [ ] Removing from one chat keeps documents used by another chat.
 - [x] Final-reference removal deletes document data.
+- [x] Processing retry maps upload-required, active-processing, and ready states.
 - [ ] Status polling exposes public processing stages.

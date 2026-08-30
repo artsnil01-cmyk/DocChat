@@ -8,7 +8,7 @@ PDF bytes should not pass through the Vercel Function body. The backend authoriz
 - `app/api/documents/blob/route.ts` handles Vercel Blob token generation and completion callbacks.
 - `lib/documents/schemas.ts` validates file type, size, and metadata.
 - `lib/documents/storage.ts` owns Vercel Blob interactions.
-- `lib/documents/service.ts` owns document state transitions.
+- `lib/documents/service/` owns document state transitions.
 
 ## Statuses
 
@@ -53,6 +53,13 @@ New preflight responses include the Blob pathname and upload handler URL only wh
 The backend recalculates the SHA-256 while ingesting uploaded bytes. That backend hash is authoritative and must match the declared frontend hash.
 
 If the backend hash does not match, the uploaded Blob and document record are deleted because the file is not trusted.
+
+## Retry
+
+- `pending_upload`: call `POST /api/documents` again to get Blob upload instructions.
+- `failed` with Blob data: call `POST /api/documents/{documentId}/process`.
+- `processing`: `POST /api/documents/{documentId}/process` returns `already_processing` while the active lock is valid.
+- `ready`: `POST /api/documents/{documentId}/process` returns `ready`.
 
 ## Chat Attachments And Garbage Collection
 
