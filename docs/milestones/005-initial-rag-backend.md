@@ -1,15 +1,15 @@
-# Milestone 005: Layout-Aware RAG Backend
+# Milestone 005: Page-Aware RAG Backend
 
 ## Goal
 
-Implement the production `layout-parent-child-v1` ingestion and retrieval pipeline for native-text French/Arabic PDFs.
+Implement the production `page-parent-child-v1` ingestion and retrieval pipeline for native-text French/Arabic PDFs.
 
 ## Strategy And Config
 
 - [x] Add RAG config constants.
 - [x] Add document ingestion service boundary.
 - [x] Wire document processing route to ingestion runner.
-- [x] Set `RAG_STRATEGY_VERSION=layout-parent-child-v1`.
+- [x] Set `RAG_STRATEGY_VERSION=page-parent-child-v1`.
 - [x] Replace flat RAG config with strategy map.
 - [x] Centralize chunk, retrieval, embedding, reranking, and evidence-budget constants.
 - [x] Define LangChain as integration plumbing, not the RAG architecture.
@@ -32,29 +32,26 @@ type DocumentStage =
   | "indexing";
 ```
 
-## PDF Layout Extraction
+## PDF Text Extraction
 
-- [ ] Add PDF extraction dependency.
+- [x] Add PDF extraction dependency.
 - [ ] Read private Blob bytes server-side.
 - [ ] Verify backend SHA-256 before parsing.
-- [ ] Extract page text items with layout metadata.
-- [ ] Fail native-text unsupported PDFs cleanly.
-- [ ] Preserve page provenance.
+- [x] Extract native text by page.
+- [x] Fail native-text unsupported PDFs cleanly.
+- [x] Preserve page provenance.
 
-## Layout Reconstruction
+## Page Text Preparation
 
-- [ ] Group text items into lines.
-- [ ] Preserve RTL ordering for Arabic.
-- [ ] Detect lightweight columns.
-- [ ] Remove clear repeated headers and footers.
 - [ ] Normalize text conservatively.
+- [ ] Preserve page ranges during chunk assembly.
+- [ ] Keep extraction fallback-free: unsupported PDFs fail clearly.
 
 ## Structure And Chunking
 
-- [ ] Infer headings, paragraphs, lists, and table-like blocks.
-- [ ] Build layout-aware parent chunks.
+- [ ] Build page-aware parent chunks.
 - [ ] Build overlapping child chunks inside parents.
-- [ ] Preserve `sectionPath`, page ranges, offsets, and language.
+- [ ] Preserve page ranges, offsets, and language.
 - [ ] Keep parent chunks unembedded.
 
 ## Embedding And Persistence

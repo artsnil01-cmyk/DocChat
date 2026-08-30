@@ -1,6 +1,6 @@
 # RAG Pipeline
 
-The production path is `layout-parent-child-v1`. It extracts native PDF layout, reconstructs reading order, infers structure, chunks text into parent and child chunks, embeds child chunks, retrieves evidence, expands context, and generates a grounded answer.
+The production path is `page-parent-child-v1`. It extracts native PDF text by page, chunks page-grounded text into parent and child chunks, embeds child chunks, retrieves evidence, expands context, and generates a grounded answer.
 
 ## Responsibilities
 
@@ -16,7 +16,7 @@ The production path is `layout-parent-child-v1`. It extracts native PDF layout, 
 
 LangChain may be used for integration plumbing: chunk document shape, Cohere embeddings, Cohere reranking, and small structured-output helpers.
 
-The RAG architecture stays custom. PDF layout extraction, reading order, structure inference, chunking, MongoDB retrieval, RRF, parent expansion, context budgeting, authorization, and final streaming depend on explicit project behavior.
+The RAG architecture stays custom. PDF text extraction, chunking, MongoDB retrieval, RRF, parent expansion, context budgeting, authorization, and final streaming depend on explicit project behavior.
 
 ## Ingestion Contract
 
@@ -30,7 +30,7 @@ The first skeleton marks ingestion as failed with `rag_ingestion_not_implemented
 
 ## Strategy
 
-`layout-parent-child-v1` uses:
+`page-parent-child-v1` uses:
 
 - parent target `1600`, max `2200`;
 - child target `600`, max `750`, overlap `80`;

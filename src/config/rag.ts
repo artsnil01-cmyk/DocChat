@@ -1,14 +1,14 @@
 import { aiModels } from "@/config/ai";
 import type { DocumentStage } from "@/models/document";
 
-export const ragStrategyVersions = ["layout-parent-child-v1"] as const;
+export const ragStrategyVersions = ["page-parent-child-v1"] as const;
 
 export type RagStrategyVersion = (typeof ragStrategyVersions)[number];
 
-export const defaultRagStrategyVersion = "layout-parent-child-v1" satisfies RagStrategyVersion;
+export const defaultRagStrategyVersion = "page-parent-child-v1" satisfies RagStrategyVersion;
 
 export const RAG_STRATEGIES = {
-  "layout-parent-child-v1": {
+  "page-parent-child-v1": {
     progress: {
       reading: 10,
       normalizing: 30,
