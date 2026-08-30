@@ -13,6 +13,7 @@ import {
 } from "@/lib/documents/service/locks";
 import { getWorkspaceDocumentRecord } from "@/lib/documents/service/queries";
 import { toDocumentView, type DocumentView } from "@/lib/documents/service/views";
+import type { Document } from "@/models/document";
 
 export type ProcessDocumentResult =
   | {
@@ -36,22 +37,10 @@ export async function processDocument(params: {
     return { ok: false, reason: "not_found" };
   }
 
-  const nextAction = getDocumentNextAction(document);
+  const stableResult = getStableProcessResult(document);
 
-  if (nextAction.type === "upload") {
-    return {
-      ok: true,
-      state: "upload_required",
-      document: toDocumentView(document),
-    };
-  }
-
-  if (nextAction.type === "none") {
-    return {
-      ok: true,
-      state: "ready",
-      document: toDocumentView(document),
-    };
+  if (stableResult) {
+    return stableResult;
   }
 
   const lockResult = await acquireDocumentProcessingLock(params);
@@ -65,10 +54,22 @@ export async function processDocument(params: {
       };
     }
 
+    const freshDocument = await getWorkspaceDocumentRecord(params);
+
+    if (!freshDocument) {
+      return { ok: false, reason: "not_found" };
+    }
+
+    const freshStableResult = getStableProcessResult(freshDocument);
+
+    if (freshStableResult) {
+      return freshStableResult;
+    }
+
     return {
       ok: false,
       reason: lockResult.reason,
-      document: toDocumentView(document),
+      document: toDocumentView(freshDocument),
     };
   }
 
@@ -97,4 +98,26 @@ export async function processDocument(params: {
     state: "processing_started",
     document: processingDocument,
   };
+}
+
+function getStableProcessResult(document: Document): ProcessDocumentResult | null {
+  const nextAction = getDocumentNextAction(document);
+
+  if (nextAction.type === "upload") {
+    return {
+      ok: true,
+      state: "upload_required",
+      document: toDocumentView(document),
+    };
+  }
+
+  if (nextAction.type === "none") {
+    return {
+      ok: true,
+      state: "ready",
+      document: toDocumentView(document),
+    };
+  }
+
+  return null;
 }
