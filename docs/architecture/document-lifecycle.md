@@ -4,10 +4,11 @@ PDF bytes should not pass through the Vercel Function body. The backend authoriz
 
 ## Responsibilities
 
-- `app/api/upload/route.ts` accepts upload preflight metadata and returns upload authorization or an existing document reuse result.
-- `lib/documents/validation.ts` validates file type, size, and metadata.
+- `app/api/upload/route.ts` accepts preflight metadata and creates or reuses a document record.
+- `app/api/upload/blob/route.ts` handles Vercel Blob token generation and completion callbacks.
+- `lib/documents/schemas.ts` validates file type, size, and metadata.
 - `lib/documents/storage.ts` owns Vercel Blob interactions.
-- `lib/documents/lifecycle.ts` owns document state transitions.
+- `lib/documents/service.ts` owns document state transitions.
 
 ## Statuses
 
@@ -41,6 +42,8 @@ Before requesting upload authorization, the browser calculates `SHA-256(raw PDF 
 The backend checks `(workspaceId, contentHash)`.
 
 If a document already exists in the workspace, the backend does not authorize a new Blob upload, does not parse the file again, and adds the existing `documentId` to the current chat with `$addToSet`.
+
+New preflight responses include the Blob pathname and upload handler URL. Duplicate responses do not include upload instructions.
 
 The backend recalculates the SHA-256 while ingesting uploaded bytes. That backend hash is authoritative and must match the declared frontend hash.
 

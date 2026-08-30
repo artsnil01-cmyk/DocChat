@@ -45,6 +45,7 @@ export async function POST(request: NextRequest) {
       document: result.document,
       duplicate: result.duplicate,
       requiresUpload: result.requiresUpload,
+      upload: result.upload,
     },
     { status: result.duplicate ? 200 : 201 },
   );
