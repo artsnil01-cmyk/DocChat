@@ -7,7 +7,9 @@ import type {
 function normalizePageText(text: string): string {
   return text
     .normalize("NFKC")
-    .replace(/\s+/g, " ")
+    .replace(/[ \t]+/g, " ")
+    .replace(/ *\n */g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
     .trim();
 }
 
