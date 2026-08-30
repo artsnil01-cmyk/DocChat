@@ -1,6 +1,6 @@
 import "server-only";
 
-import { get, head, list } from "@vercel/blob";
+import { del, get, head, list } from "@vercel/blob";
 
 import { calculateSha256Hex } from "@/lib/documents/hashing";
 import { serverEnv } from "@/lib/env/server";
@@ -65,4 +65,10 @@ export async function calculateBlobSha256Hex(pathname: string): Promise<string> 
   }
 
   return calculateSha256Hex(result.stream);
+}
+
+export async function deleteBlob(pathname: string): Promise<void> {
+  await del(pathname, {
+    token: serverEnv.blobReadWriteToken,
+  });
 }

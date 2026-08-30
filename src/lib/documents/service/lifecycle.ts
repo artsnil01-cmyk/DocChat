@@ -6,6 +6,8 @@ import { documentsCollection } from "@/lib/db/collections";
 import { toDocumentView, type DocumentView } from "@/lib/documents/service/views";
 import {
   buildDocumentBlobPathname,
+  calculateBlobSha256Hex,
+  deleteBlob,
   type BlobMetadata,
 } from "@/lib/documents/storage";
 import type { DocumentUploadTokenPayload } from "@/lib/documents/service/upload";
@@ -17,7 +19,12 @@ export type CompleteDocumentUploadResult =
     }
   | {
       ok: false;
-      reason: "not_found" | "invalid_state" | "pathname_mismatch" | "blob_mismatch";
+      reason:
+        | "not_found"
+        | "invalid_state"
+        | "pathname_mismatch"
+        | "blob_mismatch"
+        | "content_hash_mismatch";
     };
 
 export async function completeDocumentBlobUpload(params: {
@@ -56,6 +63,18 @@ export async function completeDocumentBlobUpload(params: {
     return { ok: false, reason: "blob_mismatch" };
   }
 
+  const verifiedContentHash = await calculateBlobSha256Hex(expectedPathname);
+
+  if (verifiedContentHash !== document.contentHash) {
+    await deleteUntrustedUpload({
+      documentId: document._id,
+      workspaceId: document.workspaceId,
+      pathname: expectedPathname,
+    });
+
+    return { ok: false, reason: "content_hash_mismatch" };
+  }
+
   const now = new Date();
   const result = await documents.findOneAndUpdate(
     {
@@ -86,4 +105,19 @@ export async function completeDocumentBlobUpload(params: {
     ok: true,
     document: toDocumentView(result),
   };
+}
+
+async function deleteUntrustedUpload(params: {
+  documentId: ObjectId;
+  workspaceId: string;
+  pathname: string;
+}): Promise<void> {
+  await deleteBlob(params.pathname).catch(() => undefined);
+
+  const documents = await documentsCollection();
+  await documents.deleteOne({
+    _id: params.documentId,
+    workspaceId: params.workspaceId,
+    status: "pending_upload",
+  });
 }

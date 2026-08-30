@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
       });
 
       if (!result.ok) {
-        throw new Error("Blob upload completion rejected.");
+        throw new Error(`Blob upload completion rejected: ${result.reason}.`);
       }
     },
   });
