@@ -2,12 +2,14 @@ import "server-only";
 
 import type { ObjectId } from "mongodb";
 
+import { getRagStrategy } from "@/config/rag";
 import {
   markDocumentFailed,
   markDocumentProcessing,
 } from "@/lib/documents/service/lifecycle";
 import { releaseDocumentProcessingLock } from "@/lib/documents/service/locks";
 import { getWorkspaceDocumentRecord } from "@/lib/documents/service/queries";
+import { serverEnv } from "@/lib/env/server";
 import type { DocumentStage } from "@/models/document";
 
 export type RunDocumentIngestionResult =
@@ -24,6 +26,8 @@ export async function runDocumentIngestion(params: {
   documentId: ObjectId;
   lockToken: string;
 }): Promise<RunDocumentIngestionResult> {
+  const strategy = getRagStrategy(serverEnv.ragStrategyVersion);
+
   try {
     const document = await getWorkspaceDocumentRecord(params);
 
@@ -40,14 +44,14 @@ export async function runDocumentIngestion(params: {
       workspaceId: params.workspaceId,
       documentId: params.documentId,
       stage: "reading",
-      progress: 5,
+      progress: strategy.progress.reading,
     });
 
     await failDocument(
       params,
       "reading",
       "rag_ingestion_not_implemented",
-      "Document ingestion is not implemented yet.",
+      `Document ingestion is not implemented yet for ${serverEnv.ragStrategyVersion}.`,
     );
 
     return { ok: false, reason: "not_implemented" };

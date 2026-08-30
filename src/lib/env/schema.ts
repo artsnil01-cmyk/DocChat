@@ -1,6 +1,9 @@
-const SUPPORTED_RAG_STRATEGY_VERSIONS = ["parent-child-v1"] as const;
+import {
+  ragStrategyVersions,
+  type RagStrategyVersion,
+} from "@/config/rag";
 
-type RagStrategyVersion = (typeof SUPPORTED_RAG_STRATEGY_VERSIONS)[number];
+const SUPPORTED_RAG_STRATEGY_VERSIONS = ragStrategyVersions;
 
 type EnvSource = Record<string, string | undefined>;
 

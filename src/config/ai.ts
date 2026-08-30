@@ -1,5 +1,6 @@
 export const aiModels = {
   openai: {
+    auxiliary: "gpt-5.6-luna",
     generation: "gpt-5-mini",
   },
   cohere: {
