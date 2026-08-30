@@ -15,10 +15,9 @@ Implement secure PDF upload, workspace-local deduplication, chat attachment, sta
 - [x] Return Blob upload instructions from preflight for new documents.
 - [x] Authorize direct upload to private Vercel Blob storage.
 - [x] Verify Blob upload completion server-side.
-- [x] Carry chat scope through Blob upload token payload.
-- [x] Attach documents to chats through `Chat.documentIds`.
-- [x] Attach existing documents to chats with `$addToSet`.
-- [x] List documents by workspace and chat scope.
+- [x] Keep Blob upload token payload workspace/document scoped.
+- [x] Keep upload independent from chat attachment.
+- [x] List documents by workspace and optional chat scope.
 - [x] Recalculate backend SHA-256 during ingestion.
 - [x] Delete untrusted uploads when backend hash does not match.
 - [x] Handle late duplicate discovery.
@@ -27,7 +26,7 @@ Implement secure PDF upload, workspace-local deduplication, chat attachment, sta
 - [x] Add document processing retry route contract.
 - [x] Implement document status polling.
 - [x] Remove document reference from a chat without deleting workspace document data.
-- [ ] Add explicit global document delete from workspace library.
+- [x] Add explicit global document delete from workspace library.
 - [ ] Add soft processing cancellation contract.
 
 ## Validation

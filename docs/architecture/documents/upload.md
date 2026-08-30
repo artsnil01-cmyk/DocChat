@@ -28,14 +28,14 @@ sequenceDiagram
   API-->>UI: existing document or upload instructions
 
   UI->>API: Blob SDK calls /api/documents/blob for token
-  API->>Mongo: validate workspace, chat, document, pathname
+  API->>Mongo: validate workspace, document, pathname
   API-->>UI: short-lived Blob client token
 
   UI->>Blob: upload PDF directly
   Blob->>API: upload completed callback
   API->>Blob: read metadata and bytes
   API->>API: recalculate SHA-256
-  API->>Mongo: mark processing or attach duplicate
+  API->>Mongo: mark processing or canonicalize duplicate
 ```
 
 ## Local Callback Testing
@@ -53,11 +53,12 @@ npm run dev
 ## Rules
 
 - The browser never sends PDF bytes through the Next.js request body.
-- Upload preflight accepts metadata only: `chatId`, `name`, `sizeBytes`, `contentHash`.
+- Upload preflight accepts metadata only: `name`, `sizeBytes`, `contentHash`.
 - Documents are workspace assets and can exist without a chat reference.
 - Existing workspace documents are reused by `(workspaceId, contentHash)`.
 - Blob pathnames are stable: `documents/{documentId}/original.pdf`.
 - Backend hash verification is authoritative.
 - Hash mismatch deletes the uploaded Blob and document record.
 - Detaching from a chat does not delete the workspace document.
-- Global delete removes the document from all chats, then deletes chunks, Blob, and document record.
+- Global delete removes the document from all workspace chats, then deletes chunks, Blob, and document record.
+- Global delete returns conflict while an active processing lock exists.
