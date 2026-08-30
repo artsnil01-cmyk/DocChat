@@ -15,6 +15,7 @@ Implement secure PDF upload, workspace-local deduplication, chat attachment, sta
 - [x] Return Blob upload instructions from preflight for new documents.
 - [x] Authorize direct upload to private Vercel Blob storage.
 - [x] Verify Blob upload completion server-side.
+- [x] Carry chat scope through Blob upload token payload.
 - [x] Attach documents to chats through `Chat.documentIds`.
 - [x] Attach existing documents to chats with `$addToSet`.
 - [x] List documents by workspace and chat scope.

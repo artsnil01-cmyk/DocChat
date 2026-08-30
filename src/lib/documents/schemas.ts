@@ -17,10 +17,12 @@ export const uploadPreflightRequestSchema = z.object({
 });
 
 export const blobUploadClientPayloadSchema = z.object({
+  chatId: objectIdStringSchema,
   documentId: objectIdStringSchema,
 });
 
 export const blobUploadTokenPayloadSchema = z.object({
+  chatId: objectIdStringSchema,
   documentId: objectIdStringSchema,
   workspaceId: z.string().trim().min(1),
   pathname: z.string().trim().min(1),

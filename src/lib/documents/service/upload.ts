@@ -37,6 +37,7 @@ export type DocumentUploadAuthorizationResult =
     };
 
 export type DocumentUploadTokenPayload = {
+  chatId: string;
   documentId: string;
   workspaceId: string;
   pathname: string;
@@ -113,13 +114,25 @@ export async function preflightDocumentUpload(params: {
 
 export async function authorizeDocumentBlobUpload(params: {
   workspaceId: string;
+  chatId: ObjectId;
   documentId: ObjectId;
   pathname: string;
 }): Promise<DocumentUploadAuthorizationResult> {
+  const chats = await chatsCollection();
+  const chat = await chats.findOne({
+    _id: params.chatId,
+    workspaceId: params.workspaceId,
+    documentIds: params.documentId,
+  });
+
+  if (!chat) {
+    return { ok: false, reason: "not_found" };
+  }
+
   const documents = await documentsCollection();
   const document = await documents.findOne({
     _id: params.documentId,
-    workspaceId: params.workspaceId,
+    workspaceId: chat.workspaceId,
   });
 
   if (!document) {
@@ -140,6 +153,7 @@ export async function authorizeDocumentBlobUpload(params: {
     ok: true,
     authorization: getPrivatePdfUploadConstraints({ pathname }),
     tokenPayload: {
+      chatId: chat._id.toHexString(),
       documentId: document._id.toHexString(),
       workspaceId: document.workspaceId,
       pathname,
