@@ -26,8 +26,9 @@ Implement secure PDF upload, workspace-local deduplication, chat attachment, sta
 - [x] Reuse uploaded failed documents through processing retry.
 - [x] Add document processing retry route contract.
 - [x] Implement document status polling.
-- [x] Remove document reference from a chat without deleting shared document data.
-- [x] Garbage-collect chunks, Blob, and document record when final chat reference is removed.
+- [x] Remove document reference from a chat without deleting workspace document data.
+- [ ] Add explicit global document delete from workspace library.
+- [ ] Add soft processing cancellation contract.
 
 ## Validation
 
@@ -35,6 +36,6 @@ Implement secure PDF upload, workspace-local deduplication, chat attachment, sta
 - [ ] Same filename with different content creates a distinct document.
 - [ ] Same-name display names remain understandable.
 - [ ] Removing from one chat keeps documents used by another chat.
-- [x] Final-reference removal deletes document data.
+- [x] Chat detach keeps workspace document data.
 - [x] Processing retry maps upload-required, active-processing, and ready states.
 - [ ] Status polling exposes public processing stages.

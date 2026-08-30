@@ -9,7 +9,8 @@ type DocumentStatus =
   | "pending_upload"
   | "processing"
   | "ready"
-  | "failed";
+  | "failed"
+  | "cancelled";
 ```
 
 ## Stages
@@ -35,6 +36,19 @@ type DocumentProcessingLock = {
 ```
 
 The lock is valid only for documents with Blob data and status `processing` or `failed`. Public callers use `processDocument()`; direct lock calls stay internal to the document service.
+
+## Cancellation
+
+Processing cancellation is soft. The cancel route sets `cancelRequestedAt`; the active stage finishes its current operation, then the pipeline checks the flag before starting the next stage.
+
+If cancellation is requested:
+
+- stop before the next stage;
+- mark `status: "cancelled"`;
+- release `processingLock`;
+- keep Blob data for retry or explicit delete.
+
+`pending_upload` documents can be deleted immediately. `processing` documents are cancelled before deletion. `ready`, `failed`, and `cancelled` documents can be deleted explicitly.
 
 ## Process Route Results
 

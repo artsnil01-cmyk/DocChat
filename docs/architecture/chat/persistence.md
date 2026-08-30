@@ -15,5 +15,6 @@ Chats are workspace-scoped conversation records. A new chat is created only when
 
 - Empty "new chat" UI state does not create a database record.
 - Chat operations resolve workspace from the authenticated session.
-- `Chat.documentIds` stores the default document scope for the conversation.
+- `Chat.documentIds` references workspace documents attached to the conversation.
+- Detaching a document from a chat does not delete it from the workspace library.
 - Per-query document restrictions do not mutate `Chat.documentIds`.

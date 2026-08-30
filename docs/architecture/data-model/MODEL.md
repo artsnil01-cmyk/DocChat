@@ -47,15 +47,16 @@ Rules: one login creates one session, several sessions may share a workspace, ra
 - `blobPathname?: string`
 - `sizeBytes: number`
 - `pageCount?: number`
-- `status: "pending_upload" | "processing" | "ready" | "failed"`
+- `status: "pending_upload" | "processing" | "ready" | "failed" | "cancelled"`
 - `stage?: "reading" | "normalizing" | "chunking" | "embedding" | "indexing"`
 - `progress?: number`
 - `error?: { code: string; message: string }`
 - `processingLock?: { token: string; expiresAt: Date }`
+- `cancelRequestedAt?: Date`
 - `createdAt: Date`
 - `updatedAt: Date`
 
-Rules: workspace-scoped storage, `(workspaceId, contentHash)` deduplication, stable Blob pathname, short-lived processing lock.
+Rules: workspace-scoped storage, `(workspaceId, contentHash)` deduplication, stable Blob pathname, short-lived processing lock, soft cancellation between processing stages.
 
 ### `chunks`
 
@@ -85,7 +86,7 @@ Rules: child chunks are retrieval units, parent chunks provide context, workspac
 - `createdAt: Date`
 - `updatedAt: Date`
 
-Rules: `documentIds` is the persistent/default chat scope; per-query selection does not mutate it.
+Rules: `documentIds` references workspace documents attached to the chat; per-query selection does not mutate it.
 
 ### `messages`
 
