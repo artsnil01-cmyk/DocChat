@@ -8,7 +8,13 @@ import {
 } from "@/lib/documents/service/lifecycle";
 import { releaseDocumentProcessingLock } from "@/lib/documents/service/locks";
 import { getWorkspaceDocumentRecord } from "@/lib/documents/service/queries";
+import {
+  readDocumentBlobBytes,
+  verifyDocumentBlobHash,
+} from "@/lib/documents/storage";
 import { serverEnv } from "@/lib/env/server";
+import { extractPdfText } from "@/lib/rag/extraction";
+import type { DocumentError } from "@/models/document";
 
 export type RunDocumentIngestionResult =
   | {
@@ -16,8 +22,17 @@ export type RunDocumentIngestionResult =
     }
   | {
       ok: false;
-      reason: "not_found" | "missing_blob" | "not_implemented" | "lock_lost";
+      reason:
+        | "not_found"
+        | "missing_blob"
+        | "blob_read_failed"
+        | "content_hash_mismatch"
+        | "pdf_extraction_failed"
+        | "not_implemented"
+        | "lock_lost";
     };
+
+type LockedDocumentLifecycle = ReturnType<typeof createLockedDocumentLifecycle>;
 
 export async function runDocumentIngestion(params: {
   workspaceId: string;
@@ -35,19 +50,11 @@ export async function runDocumentIngestion(params: {
     }
 
     if (!document.blobPathname) {
-      const failedDocument = await lifecycle.markFailed({
-        stage: "reading",
-        error: {
-          code: "missing_blob",
-          message: "Document Blob is missing.",
-        },
+      return failAtReading(lifecycle, {
+        reason: "missing_blob",
+        code: "missing_blob",
+        message: "Document Blob is missing.",
       });
-
-      if (!failedDocument) {
-        return { ok: false, reason: "lock_lost" };
-      }
-
-      return { ok: false, reason: "missing_blob" };
     }
 
     const processingDocument = await lifecycle.markProcessing({
@@ -59,19 +66,43 @@ export async function runDocumentIngestion(params: {
       return { ok: false, reason: "lock_lost" };
     }
 
-    const failedDocument = await lifecycle.markFailed({
-      stage: "reading",
+    const blobBytesResult = await readVerifiedBlobBytes({
+      lifecycle,
+      pathname: document.blobPathname,
+      expectedHash: document.contentHash,
+    });
+
+    if (!blobBytesResult.ok) {
+      return { ok: false, reason: blobBytesResult.reason };
+    }
+
+    const extractionResult = await extractPdfText(blobBytesResult.bytes);
+
+    if (!extractionResult.ok) {
+      return failAtReading(lifecycle, {
+        reason: "pdf_extraction_failed",
+        code: extractionResult.code.toLowerCase(),
+        message: extractionResult.message,
+      });
+    }
+
+    const normalizingDocument = await lifecycle.markProcessing({
+      stage: "normalizing",
+      progress: strategy.progress.normalizing,
+    });
+
+    if (!normalizingDocument) {
+      return { ok: false, reason: "lock_lost" };
+    }
+
+    return failDocument(lifecycle, {
+      stage: "normalizing",
+      reason: "not_implemented",
       error: {
         code: "rag_ingestion_not_implemented",
         message: `Document ingestion is not implemented yet for ${serverEnv.ragStrategyVersion}.`,
       },
     });
-
-    if (!failedDocument) {
-      return { ok: false, reason: "lock_lost" };
-    }
-
-    return { ok: false, reason: "not_implemented" };
   } finally {
     await releaseDocumentProcessingLock({
       workspaceId: params.workspaceId,
@@ -79,4 +110,91 @@ export async function runDocumentIngestion(params: {
       token: params.lockToken,
     });
   }
+}
+
+async function readVerifiedBlobBytes(params: {
+  lifecycle: LockedDocumentLifecycle;
+  pathname: string;
+  expectedHash: string;
+}): Promise<
+  | {
+      ok: true;
+      bytes: Uint8Array;
+    }
+  | {
+      ok: false;
+      reason: "blob_read_failed" | "content_hash_mismatch" | "lock_lost";
+    }
+> {
+  let bytes: Uint8Array;
+
+  try {
+    bytes = await readDocumentBlobBytes(params.pathname);
+  } catch {
+    return failAtReading(params.lifecycle, {
+      reason: "blob_read_failed",
+      code: "blob_read_failed",
+      message: "Document Blob could not be read.",
+    });
+  }
+
+  if (
+    !verifyDocumentBlobHash({
+      bytes,
+      expectedHash: params.expectedHash,
+    })
+  ) {
+    return failAtReading(params.lifecycle, {
+      reason: "content_hash_mismatch",
+      code: "content_hash_mismatch",
+      message: "Document Blob hash does not match the expected content hash.",
+    });
+  }
+
+  return {
+    ok: true,
+    bytes,
+  };
+}
+
+function failAtReading<
+  Reason extends Exclude<RunDocumentIngestionResult, { ok: true }>["reason"],
+>(
+  lifecycle: LockedDocumentLifecycle,
+  failure: {
+    reason: Reason;
+    code: string;
+    message: string;
+  },
+): Promise<{ ok: false; reason: Reason | "lock_lost" }> {
+  return failDocument(lifecycle, {
+    stage: "reading",
+    reason: failure.reason,
+    error: {
+      code: failure.code,
+      message: failure.message,
+    },
+  });
+}
+
+async function failDocument<
+  Reason extends Exclude<RunDocumentIngestionResult, { ok: true }>["reason"],
+>(
+  lifecycle: LockedDocumentLifecycle,
+  params: {
+    stage: "reading" | "normalizing";
+    reason: Reason;
+    error: DocumentError;
+  },
+): Promise<{ ok: false; reason: Reason | "lock_lost" }> {
+  const failedDocument = await lifecycle.markFailed({
+    stage: params.stage,
+    error: params.error,
+  });
+
+  if (!failedDocument) {
+    return { ok: false, reason: "lock_lost" };
+  }
+
+  return { ok: false, reason: params.reason };
 }
