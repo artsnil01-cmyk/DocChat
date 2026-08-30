@@ -35,8 +35,8 @@ type DocumentStage =
 ## PDF Text Extraction
 
 - [x] Add PDF extraction dependency.
-- [ ] Read private Blob bytes server-side.
-- [ ] Verify backend SHA-256 before parsing.
+- [x] Read private Blob bytes server-side.
+- [x] Verify backend SHA-256 before parsing.
 - [x] Extract native text by page.
 - [x] Fail native-text unsupported PDFs cleanly.
 - [x] Preserve page provenance.
