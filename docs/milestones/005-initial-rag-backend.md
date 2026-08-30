@@ -43,7 +43,7 @@ type DocumentStage =
 
 ## Page Text Preparation
 
-- [ ] Normalize text conservatively.
+- [x] Normalize text conservatively.
 - [ ] Preserve page ranges during chunk assembly.
 - [ ] Keep extraction fallback-free: unsupported PDFs fail clearly.
 
