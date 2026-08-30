@@ -47,6 +47,8 @@ New preflight responses include the Blob pathname and upload handler URL. Duplic
 
 The backend recalculates the SHA-256 while ingesting uploaded bytes. That backend hash is authoritative and must match the declared frontend hash.
 
+If the backend hash does not match, the uploaded Blob and document record are deleted because the file is not trusted.
+
 ## Chat Attachments And Garbage Collection
 
 Documents are stored and deduplicated at workspace scope, but they are user-visible as chat attachments.
