@@ -15,6 +15,11 @@ import {
   calculateBlobSha256Hex,
   type BlobMetadata,
 } from "@/lib/documents/storage";
+import type {
+  Document,
+  DocumentError,
+  DocumentStage,
+} from "@/models/document";
 import type { DocumentUploadTokenPayload } from "@/lib/documents/service/upload";
 
 export type CompleteDocumentUploadResult =
@@ -137,4 +142,102 @@ export async function completeDocumentBlobUpload(params: {
     document: toDocumentView(result),
     duplicate: false,
   };
+}
+
+export async function markDocumentProcessing(params: {
+  workspaceId: string;
+  documentId: ObjectId;
+  stage: DocumentStage;
+  progress: number;
+}): Promise<DocumentView | null> {
+  const documents = await documentsCollection();
+  const document = await documents.findOneAndUpdate(
+    {
+      _id: params.documentId,
+      workspaceId: params.workspaceId,
+    },
+    {
+      $set: {
+        status: "processing",
+        stage: params.stage,
+        progress: params.progress,
+        updatedAt: new Date(),
+      },
+      $unset: {
+        error: "",
+      },
+    },
+    {
+      returnDocument: "after",
+    },
+  );
+
+  return document ? toDocumentView(document) : null;
+}
+
+export async function markDocumentFailed(params: {
+  workspaceId: string;
+  documentId: ObjectId;
+  stage: DocumentStage;
+  error: DocumentError;
+}): Promise<DocumentView | null> {
+  const documents = await documentsCollection();
+  const document = await documents.findOneAndUpdate(
+    {
+      _id: params.documentId,
+      workspaceId: params.workspaceId,
+    },
+    {
+      $set: {
+        status: "failed",
+        stage: params.stage,
+        error: params.error,
+        updatedAt: new Date(),
+      },
+      $unset: {
+        processingLock: "",
+      },
+    },
+    {
+      returnDocument: "after",
+    },
+  );
+
+  return document ? toDocumentView(document) : null;
+}
+
+export async function markDocumentReady(params: {
+  workspaceId: string;
+  documentId: ObjectId;
+  pageCount: number;
+}): Promise<DocumentView | null> {
+  const documents = await documentsCollection();
+  const document = await documents.findOneAndUpdate(
+    {
+      _id: params.documentId,
+      workspaceId: params.workspaceId,
+    },
+    {
+      $set: {
+        status: "ready",
+        progress: 100,
+        pageCount: params.pageCount,
+        updatedAt: new Date(),
+      },
+      $unset: {
+        stage: "",
+        error: "",
+        processingLock: "",
+      },
+    },
+    {
+      returnDocument: "after",
+    },
+  );
+
+  return document ? toDocumentView(document) : null;
+}
+
+export function getInitialProcessingStage(document: Document): DocumentStage {
+  return document.stage ?? "reading";
 }
