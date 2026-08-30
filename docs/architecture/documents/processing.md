@@ -37,6 +37,8 @@ type DocumentProcessingLock = {
 
 The lock is valid only for documents with Blob data and status `processing` or `failed`. Public callers use `processDocument()`; direct lock calls stay internal to the document service.
 
+Progress values are strategy-owned UI anchors. They describe user-visible stage movement, not exact compute percentages.
+
 ## Cancellation
 
 Processing cancellation is soft. The cancel route sets `cancelRequestedAt`; the active stage finishes its current operation, then the pipeline checks the flag before starting the next stage.

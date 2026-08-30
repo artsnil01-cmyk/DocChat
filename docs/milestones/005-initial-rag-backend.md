@@ -9,9 +9,9 @@ Implement the production `layout-parent-child-v1` ingestion and retrieval pipeli
 - [x] Add RAG config constants.
 - [x] Add document ingestion service boundary.
 - [x] Wire document processing route to ingestion runner.
-- [ ] Set `RAG_STRATEGY_VERSION=layout-parent-child-v1`.
-- [ ] Replace flat RAG config with strategy map.
-- [ ] Centralize chunk, retrieval, embedding, reranking, and evidence-budget constants.
+- [x] Set `RAG_STRATEGY_VERSION=layout-parent-child-v1`.
+- [x] Replace flat RAG config with strategy map.
+- [x] Centralize chunk, retrieval, embedding, reranking, and evidence-budget constants.
 
 ## Ingestion Trigger And State
 
