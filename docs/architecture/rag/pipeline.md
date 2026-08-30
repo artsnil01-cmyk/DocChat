@@ -14,6 +14,8 @@ The production path is `layout-parent-child-v1`. It extracts native PDF layout, 
 
 ## Ingestion Contract
 
+Blob completion schedules ingestion with Next.js `after()` so the upload callback response stays fast.
+
 `processDocument()` acquires the document processing lock, then calls the RAG ingestion runner with `workspaceId`, `documentId`, and `lockToken`.
 
 The ingestion runner updates `Document.status`, `stage`, and `progress` through document lifecycle helpers. It releases the processing lock when the run finishes or fails.

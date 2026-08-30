@@ -15,8 +15,8 @@ Implement the production `layout-parent-child-v1` ingestion and retrieval pipeli
 
 ## Ingestion Trigger And State
 
-- [ ] Keep Blob completion callback fast.
-- [ ] Trigger ingestion after Blob completion.
+- [x] Keep Blob completion callback fast.
+- [x] Trigger ingestion after Blob completion.
 - [ ] Keep user-visible stages traceable.
 - [ ] Add cancellation checkpoints between processing stages.
 
