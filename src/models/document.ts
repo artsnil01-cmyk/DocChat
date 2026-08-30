@@ -18,6 +18,11 @@ export type DocumentError = {
   message: string;
 };
 
+export type DocumentProcessingLock = {
+  token: string;
+  expiresAt: Date;
+};
+
 export type Document = {
   _id: ObjectId;
   workspaceId: string;
@@ -30,6 +35,7 @@ export type Document = {
   stage?: DocumentStage;
   progress?: number;
   error?: DocumentError;
+  processingLock?: DocumentProcessingLock;
   createdAt: Date;
   updatedAt: Date;
 };

@@ -80,6 +80,7 @@ Indexes:
 - `stage?: "reading" | "normalizing" | "chunking" | "embedding" | "indexing"`
 - `progress?: number`
 - `error?: { code: string; message: string }`
+- `processingLock?: { token: string; expiresAt: Date }`
 - `createdAt: Date`
 - `updatedAt: Date`
 
@@ -89,6 +90,7 @@ Rules:
 - Byte-identical PDFs are deduplicated only within the same workspace.
 - Filename equality does not imply document equality.
 - Blob paths are stable internal paths such as `documents/{documentId}/original.pdf`.
+- `processingLock` prevents duplicate ingestion work and expires quickly.
 
 Indexes:
 

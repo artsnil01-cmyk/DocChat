@@ -68,4 +68,6 @@ If the removed reference was the final chat reference, the application deletes:
 
 Do not add a processing jobs collection initially. The document record tracks lifecycle with `status`, `stage`, `progress`, and `error`.
 
+`processingLock` is a short-lived document field used to prevent duplicate processing of the same workspace document.
+
 Document responses include `nextAction`: `upload`, `process`, `wait`, or `none`.
