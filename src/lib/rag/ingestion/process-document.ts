@@ -14,6 +14,7 @@ import {
 } from "@/lib/documents/storage";
 import { serverEnv } from "@/lib/env/server";
 import { extractPdfText } from "@/lib/rag/extraction";
+import { normalizePdfText } from "@/lib/rag/normalization";
 import type { DocumentError } from "@/models/document";
 
 export type RunDocumentIngestionResult =
@@ -28,6 +29,7 @@ export type RunDocumentIngestionResult =
         | "blob_read_failed"
         | "content_hash_mismatch"
         | "pdf_extraction_failed"
+        | "pdf_normalization_failed"
         | "not_implemented"
         | "lock_lost";
     };
@@ -95,8 +97,30 @@ export async function runDocumentIngestion(params: {
       return { ok: false, reason: "lock_lost" };
     }
 
+    const normalizationResult = normalizePdfText(extractionResult.document);
+
+    if (!normalizationResult.ok) {
+      return failDocument(lifecycle, {
+        stage: "normalizing",
+        reason: "pdf_normalization_failed",
+        error: {
+          code: normalizationResult.code.toLowerCase(),
+          message: normalizationResult.message,
+        },
+      });
+    }
+
+    const chunkingDocument = await lifecycle.markProcessing({
+      stage: "chunking",
+      progress: strategy.progress.chunking,
+    });
+
+    if (!chunkingDocument) {
+      return { ok: false, reason: "lock_lost" };
+    }
+
     return failDocument(lifecycle, {
-      stage: "normalizing",
+      stage: "chunking",
       reason: "not_implemented",
       error: {
         code: "rag_ingestion_not_implemented",
@@ -182,7 +206,7 @@ async function failDocument<
 >(
   lifecycle: LockedDocumentLifecycle,
   params: {
-    stage: "reading" | "normalizing";
+    stage: "reading" | "normalizing" | "chunking";
     reason: Reason;
     error: DocumentError;
   },
