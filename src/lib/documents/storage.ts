@@ -1,7 +1,8 @@
 import "server-only";
 
-import { head, list } from "@vercel/blob";
+import { get, head, list } from "@vercel/blob";
 
+import { calculateSha256Hex } from "@/lib/documents/hashing";
 import { serverEnv } from "@/lib/env/server";
 
 export const PDF_CONTENT_TYPES = ["application/pdf"];
@@ -50,4 +51,18 @@ export async function getBlobMetadata(pathname: string): Promise<BlobMetadata> {
     size: metadata.size,
     contentType: metadata.contentType,
   };
+}
+
+export async function calculateBlobSha256Hex(pathname: string): Promise<string> {
+  const result = await get(pathname, {
+    access: "private",
+    useCache: false,
+    token: serverEnv.blobReadWriteToken,
+  });
+
+  if (!result || result.statusCode !== 200) {
+    throw new Error("Blob content not found.");
+  }
+
+  return calculateSha256Hex(result.stream);
 }
