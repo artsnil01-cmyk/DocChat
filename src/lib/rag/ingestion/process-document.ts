@@ -4,13 +4,11 @@ import type { ObjectId } from "mongodb";
 
 import { getRagStrategy } from "@/config/rag";
 import {
-  markDocumentFailed,
-  markDocumentProcessing,
+  createLockedDocumentLifecycle,
 } from "@/lib/documents/service/lifecycle";
 import { releaseDocumentProcessingLock } from "@/lib/documents/service/locks";
 import { getWorkspaceDocumentRecord } from "@/lib/documents/service/queries";
 import { serverEnv } from "@/lib/env/server";
-import type { DocumentStage } from "@/models/document";
 
 export type RunDocumentIngestionResult =
   | {
@@ -18,7 +16,7 @@ export type RunDocumentIngestionResult =
     }
   | {
       ok: false;
-      reason: "not_found" | "missing_blob" | "not_implemented";
+      reason: "not_found" | "missing_blob" | "not_implemented" | "lock_lost";
     };
 
 export async function runDocumentIngestion(params: {
@@ -27,6 +25,7 @@ export async function runDocumentIngestion(params: {
   lockToken: string;
 }): Promise<RunDocumentIngestionResult> {
   const strategy = getRagStrategy(serverEnv.ragStrategyVersion);
+  const lifecycle = createLockedDocumentLifecycle(params);
 
   try {
     const document = await getWorkspaceDocumentRecord(params);
@@ -36,23 +35,41 @@ export async function runDocumentIngestion(params: {
     }
 
     if (!document.blobPathname) {
-      await failDocument(params, "reading", "missing_blob", "Document Blob is missing.");
+      const failedDocument = await lifecycle.markFailed({
+        stage: "reading",
+        error: {
+          code: "missing_blob",
+          message: "Document Blob is missing.",
+        },
+      });
+
+      if (!failedDocument) {
+        return { ok: false, reason: "lock_lost" };
+      }
+
       return { ok: false, reason: "missing_blob" };
     }
 
-    await markDocumentProcessing({
-      workspaceId: params.workspaceId,
-      documentId: params.documentId,
+    const processingDocument = await lifecycle.markProcessing({
       stage: "reading",
       progress: strategy.progress.reading,
     });
 
-    await failDocument(
-      params,
-      "reading",
-      "rag_ingestion_not_implemented",
-      `Document ingestion is not implemented yet for ${serverEnv.ragStrategyVersion}.`,
-    );
+    if (!processingDocument) {
+      return { ok: false, reason: "lock_lost" };
+    }
+
+    const failedDocument = await lifecycle.markFailed({
+      stage: "reading",
+      error: {
+        code: "rag_ingestion_not_implemented",
+        message: `Document ingestion is not implemented yet for ${serverEnv.ragStrategyVersion}.`,
+      },
+    });
+
+    if (!failedDocument) {
+      return { ok: false, reason: "lock_lost" };
+    }
 
     return { ok: false, reason: "not_implemented" };
   } finally {
@@ -62,24 +79,4 @@ export async function runDocumentIngestion(params: {
       token: params.lockToken,
     });
   }
-}
-
-async function failDocument(
-  params: {
-    workspaceId: string;
-    documentId: ObjectId;
-  },
-  stage: DocumentStage,
-  code: string,
-  message: string,
-): Promise<void> {
-  await markDocumentFailed({
-    workspaceId: params.workspaceId,
-    documentId: params.documentId,
-    stage,
-    error: {
-      code,
-      message,
-    },
-  });
 }

@@ -1,9 +1,8 @@
 import "server-only";
 
-import { ObjectId } from "mongodb";
+import { ObjectId, type Filter } from "mongodb";
 
 import { documentsCollection } from "@/lib/db/collections";
-import { replaceChatDocumentReference } from "@/lib/documents/service/attachments";
 import { deletePendingUpload } from "@/lib/documents/service/cleanup";
 import {
   findWorkspaceDocumentByContentHash,
@@ -21,6 +20,17 @@ import type {
   DocumentStage,
 } from "@/models/document";
 import type { DocumentUploadTokenPayload } from "@/lib/documents/service/upload";
+
+type DocumentWriteGuard = {
+  type: "processing-lock";
+  token: string;
+};
+
+type DocumentLifecycleTarget = {
+  workspaceId: string;
+  documentId: ObjectId;
+  guard?: DocumentWriteGuard;
+};
 
 export type CompleteDocumentUploadResult =
   | {
@@ -91,12 +101,6 @@ export async function completeDocumentBlobUpload(params: {
   });
 
   if (existingDocument && !existingDocument._id.equals(document._id)) {
-    await replaceChatDocumentReference({
-      workspaceId: document.workspaceId,
-      chatId: new ObjectId(params.tokenPayload.chatId),
-      currentDocumentId: document._id,
-      replacementDocumentId: existingDocument._id,
-    });
     await deletePendingUpload({
       documentId: document._id,
       workspaceId: document.workspaceId,
@@ -149,13 +153,11 @@ export async function markDocumentProcessing(params: {
   documentId: ObjectId;
   stage: DocumentStage;
   progress: number;
+  guard?: DocumentWriteGuard;
 }): Promise<DocumentView | null> {
   const documents = await documentsCollection();
   const document = await documents.findOneAndUpdate(
-    {
-      _id: params.documentId,
-      workspaceId: params.workspaceId,
-    },
+    buildDocumentLifecycleFilter(params),
     {
       $set: {
         status: "processing",
@@ -180,13 +182,11 @@ export async function markDocumentFailed(params: {
   documentId: ObjectId;
   stage: DocumentStage;
   error: DocumentError;
+  guard?: DocumentWriteGuard;
 }): Promise<DocumentView | null> {
   const documents = await documentsCollection();
   const document = await documents.findOneAndUpdate(
-    {
-      _id: params.documentId,
-      workspaceId: params.workspaceId,
-    },
+    buildDocumentLifecycleFilter(params),
     {
       $set: {
         status: "failed",
@@ -210,13 +210,11 @@ export async function markDocumentReady(params: {
   workspaceId: string;
   documentId: ObjectId;
   pageCount: number;
+  guard?: DocumentWriteGuard;
 }): Promise<DocumentView | null> {
   const documents = await documentsCollection();
   const document = await documents.findOneAndUpdate(
-    {
-      _id: params.documentId,
-      workspaceId: params.workspaceId,
-    },
+    buildDocumentLifecycleFilter(params),
     {
       $set: {
         status: "ready",
@@ -238,6 +236,67 @@ export async function markDocumentReady(params: {
   return document ? toDocumentView(document) : null;
 }
 
+export function createLockedDocumentLifecycle(params: {
+  workspaceId: string;
+  documentId: ObjectId;
+  lockToken: string;
+}) {
+  const target = {
+    workspaceId: params.workspaceId,
+    documentId: params.documentId,
+    guard: {
+      type: "processing-lock",
+      token: params.lockToken,
+    } satisfies DocumentWriteGuard,
+  };
+
+  return {
+    markProcessing(input: {
+      stage: DocumentStage;
+      progress: number;
+    }): Promise<DocumentView | null> {
+      return markDocumentProcessing({
+        ...target,
+        ...input,
+      });
+    },
+    markFailed(input: {
+      stage: DocumentStage;
+      error: DocumentError;
+    }): Promise<DocumentView | null> {
+      return markDocumentFailed({
+        ...target,
+        ...input,
+      });
+    },
+    markReady(input: {
+      pageCount: number;
+    }): Promise<DocumentView | null> {
+      return markDocumentReady({
+        ...target,
+        ...input,
+      });
+    },
+  };
+}
+
 export function getInitialProcessingStage(document: Document): DocumentStage {
   return document.stage ?? "reading";
+}
+
+function buildDocumentLifecycleFilter(
+  params: DocumentLifecycleTarget,
+): Filter<Document> {
+  if (params.guard?.type === "processing-lock") {
+    return {
+      _id: params.documentId,
+      workspaceId: params.workspaceId,
+      "processingLock.token": params.guard.token,
+    };
+  }
+
+  return {
+    _id: params.documentId,
+    workspaceId: params.workspaceId,
+  };
 }
