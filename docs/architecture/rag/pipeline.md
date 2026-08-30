@@ -12,6 +12,12 @@ The production path is `layout-parent-child-v1`. It extracts native PDF layout, 
 - `lib/rag/context/` owns parent and neighbor context expansion.
 - `lib/rag/generation/` owns grounded OpenAI prompt construction and streaming generation.
 
+## LangChain Boundary
+
+LangChain may be used for integration plumbing: chunk document shape, Cohere embeddings, Cohere reranking, and small structured-output helpers.
+
+The RAG architecture stays custom. PDF layout extraction, reading order, structure inference, chunking, MongoDB retrieval, RRF, parent expansion, context budgeting, authorization, and final streaming depend on explicit project behavior.
+
 ## Ingestion Contract
 
 Blob completion schedules ingestion with Next.js `after()` so the upload callback response stays fast.

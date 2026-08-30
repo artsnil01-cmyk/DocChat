@@ -12,6 +12,7 @@ Implement the production `layout-parent-child-v1` ingestion and retrieval pipeli
 - [x] Set `RAG_STRATEGY_VERSION=layout-parent-child-v1`.
 - [x] Replace flat RAG config with strategy map.
 - [x] Centralize chunk, retrieval, embedding, reranking, and evidence-budget constants.
+- [x] Define LangChain as integration plumbing, not the RAG architecture.
 
 ## Ingestion Trigger And State
 
@@ -59,6 +60,7 @@ type DocumentStage =
 ## Embedding And Persistence
 
 - [ ] Add token budgeting dependency.
+- [ ] Add LangChain only when wiring embeddings or reranking.
 - [ ] Embed child chunks with Cohere `search_document`.
 - [ ] Batch child embeddings.
 - [ ] Delete stale chunks before retry.

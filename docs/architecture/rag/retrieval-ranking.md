@@ -12,6 +12,10 @@ Retrieval combines dense vector search and MongoDB Atlas lexical search, then de
 
 Retrieval must always filter by current workspace and selected document IDs.
 
+## Implementation Boundary
+
+LangChain can wrap Cohere embeddings and reranking when it removes provider boilerplate. MongoDB vector search, lexical search, RRF fusion, parent expansion, context budgeting, and workspace filtering stay explicit application code.
+
 ## Conversational Context
 
 A bounded recent history window is used for both the contextualizer and final answer generation:
