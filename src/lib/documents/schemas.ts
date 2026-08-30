@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { documentConfig } from "@/config/documents";
 import {
   documentNameSchema,
   objectIdStringSchema,
@@ -12,7 +13,7 @@ export const uploadPreflightRequestSchema = z.object({
   chatId: objectIdStringSchema,
   name: documentNameSchema,
   mimeType: pdfMimeTypeSchema,
-  sizeBytes: positiveIntegerSchema.max(10 * 1024 * 1024),
+  sizeBytes: positiveIntegerSchema.max(documentConfig.maxPdfSizeBytes),
   contentHash: sha256HexSchema,
 });
 
@@ -26,7 +27,7 @@ export const blobUploadTokenPayloadSchema = z.object({
   documentId: objectIdStringSchema,
   workspaceId: z.string().trim().min(1),
   pathname: z.string().trim().min(1),
-  sizeBytes: positiveIntegerSchema.max(10 * 1024 * 1024),
+  sizeBytes: positiveIntegerSchema.max(documentConfig.maxPdfSizeBytes),
   contentHash: sha256HexSchema,
 });
 

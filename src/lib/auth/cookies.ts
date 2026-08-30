@@ -2,17 +2,15 @@ import "server-only";
 
 import type { ResponseCookie } from "next/dist/compiled/@edge-runtime/cookies";
 
+import { authConfig } from "@/config/auth";
 import { serverEnv } from "@/lib/env/server";
-
-const THIRTY_DAYS_IN_SECONDS = 60 * 60 * 24 * 30;
-const ONE_YEAR_IN_SECONDS = 60 * 60 * 24 * 365;
 
 export const authCookieOptions = {
   httpOnly: true,
   secure: serverEnv.isProduction,
   sameSite: "lax",
   path: "/",
-  maxAge: THIRTY_DAYS_IN_SECONDS,
+  maxAge: authConfig.authCookieMaxAgeSeconds,
 } satisfies Partial<ResponseCookie>;
 
 export const workspaceCookieOptions = {
@@ -20,7 +18,7 @@ export const workspaceCookieOptions = {
   secure: serverEnv.isProduction,
   sameSite: "lax",
   path: "/",
-  maxAge: ONE_YEAR_IN_SECONDS,
+  maxAge: authConfig.workspaceCookieMaxAgeSeconds,
 } satisfies Partial<ResponseCookie>;
 
 export const expiredAuthCookieOptions = {

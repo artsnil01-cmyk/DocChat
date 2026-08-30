@@ -2,12 +2,10 @@ import "server-only";
 
 import { ObjectId } from "mongodb";
 
+import { chatConfig } from "@/config/chat";
 import { chatsCollection, messagesCollection } from "@/lib/db/collections";
 import type { Chat } from "@/models/chat";
 import type { Message } from "@/models/message";
-
-const defaultChatTitle = "Nouvelle conversation";
-const recentMessageLimit = 50;
 
 export type ChatSummary = {
   id: string;
@@ -42,7 +40,7 @@ export async function createChat(params: {
   const chat: Chat = {
     _id: new ObjectId(),
     workspaceId: params.workspaceId,
-    title: params.title ?? defaultChatTitle,
+    title: params.title ?? chatConfig.defaultTitle,
     documentIds: [],
     createdAt: now,
     updatedAt: now,
@@ -82,7 +80,7 @@ export async function getChatDetail(params: {
   const recentMessages = await messages
     .find({ chatId: chat._id })
     .sort({ createdAt: -1 })
-    .limit(recentMessageLimit)
+    .limit(chatConfig.recentMessageLimit)
     .toArray();
 
   return {

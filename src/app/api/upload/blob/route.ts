@@ -2,6 +2,7 @@ import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { ObjectId } from "mongodb";
 import { NextRequest, NextResponse } from "next/server";
 
+import { documentConfig } from "@/config/documents";
 import { authenticationErrorResponse } from "@/lib/api/errors";
 import { requireAuthenticatedWorkspace } from "@/lib/auth/guards";
 import {
@@ -63,7 +64,7 @@ export async function POST(request: NextRequest) {
       return {
         allowedContentTypes: result.authorization.allowedContentTypes,
         maximumSizeInBytes: result.authorization.maximumSizeInBytes,
-        validUntil: Date.now() + 10 * 60 * 1000,
+        validUntil: Date.now() + documentConfig.blobUploadTokenLifetimeMs,
         addRandomSuffix: false,
         allowOverwrite: false,
         tokenPayload: JSON.stringify(result.tokenPayload),

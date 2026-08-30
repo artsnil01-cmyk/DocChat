@@ -2,11 +2,9 @@ import "server-only";
 
 import { del, get, head, list } from "@vercel/blob";
 
+import { documentConfig } from "@/config/documents";
 import { calculateSha256Hex } from "@/lib/documents/hashing";
 import { serverEnv } from "@/lib/env/server";
-
-export const PDF_CONTENT_TYPES = ["application/pdf"];
-export const MAX_PDF_SIZE_BYTES = 10 * 1024 * 1024;
 
 export type DocumentBlobUploadConstraints = {
   pathname: string;
@@ -36,8 +34,8 @@ export function getPrivatePdfUploadConstraints(params: {
 }): DocumentBlobUploadConstraints {
   return {
     pathname: params.pathname,
-    maximumSizeInBytes: MAX_PDF_SIZE_BYTES,
-    allowedContentTypes: PDF_CONTENT_TYPES,
+    maximumSizeInBytes: documentConfig.maxPdfSizeBytes,
+    allowedContentTypes: [...documentConfig.pdfContentTypes],
   };
 }
 

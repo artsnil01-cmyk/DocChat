@@ -2,11 +2,10 @@ import "server-only";
 
 import { ObjectId, type WithId } from "mongodb";
 
+import { authConfig } from "@/config/auth";
 import { sessionsCollection } from "@/lib/db/collections";
 import { generateAuthToken, hashAuthToken } from "@/lib/auth/tokens";
 import type { Session } from "@/models/session";
-
-const SESSION_LIFETIME_DAYS = 30;
 
 export type CreatedSession = {
   rawToken: string;
@@ -25,7 +24,7 @@ export async function createAuthSession(params: {
     workspaceId: params.workspaceId,
     tokenHash: hashAuthToken(rawToken),
     createdAt: now,
-    expiresAt: addDays(now, SESSION_LIFETIME_DAYS),
+    expiresAt: addDays(now, authConfig.sessionLifetimeDays),
   };
 
   const sessions = await sessionsCollection();
