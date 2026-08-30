@@ -22,6 +22,8 @@ Implement secure PDF upload, workspace-local deduplication, chat attachment, sta
 - [x] Recalculate backend SHA-256 during ingestion.
 - [x] Delete untrusted uploads when backend hash does not match.
 - [x] Handle late duplicate discovery.
+- [x] Make upload preflight resumable for pending documents.
+- [x] Reuse uploaded failed documents through processing retry.
 - [x] Implement document status polling.
 - [x] Remove document reference from a chat without deleting shared document data.
 - [x] Garbage-collect chunks, Blob, and document record when final chat reference is removed.

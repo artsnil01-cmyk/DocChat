@@ -41,9 +41,9 @@ Before requesting upload authorization, the browser calculates `SHA-256(raw PDF 
 
 The backend checks `(workspaceId, contentHash)`.
 
-If a document already exists in the workspace, the backend does not authorize a new Blob upload, does not parse the file again, and adds the existing `documentId` to the current chat with `$addToSet`.
+Existing workspace documents are reused by content hash. `ready`, `processing`, and uploaded `failed` documents do not upload again. `pending_upload` documents return upload instructions so the browser can retry. `failed` documents without Blob data reset to `pending_upload`.
 
-New preflight responses include the Blob pathname and upload handler URL. Duplicate responses do not include upload instructions.
+New preflight responses include the Blob pathname and upload handler URL only when upload is required.
 
 The backend recalculates the SHA-256 while ingesting uploaded bytes. That backend hash is authoritative and must match the declared frontend hash.
 

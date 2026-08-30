@@ -69,32 +69,13 @@ export async function preflightDocumentUpload(params: {
   });
 
   if (existingDocument) {
-    await attachDocumentToChat({
-      workspaceId: params.workspaceId,
+    return resolveExistingDocumentPreflight({
+      document: existingDocument,
       chatId: params.chatId,
-      documentId: existingDocument._id,
     });
-
-    return {
-      document: toDocumentView(existingDocument),
-      duplicate: true,
-      requiresUpload: false,
-    };
   }
 
-  const now = new Date();
-  const document: Document = {
-    _id: new ObjectId(),
-    workspaceId: params.workspaceId,
-    name: await resolveWorkspaceDocumentName(params.workspaceId, params.name),
-    contentHash: params.contentHash,
-    sizeBytes: params.sizeBytes,
-    status: "pending_upload",
-    createdAt: now,
-    updatedAt: now,
-  };
-
-  await documents.insertOne(document);
+  const document = await createPendingDocument(params);
   await attachDocumentToChat({
     workspaceId: params.workspaceId,
     chatId: params.chatId,
@@ -105,10 +86,7 @@ export async function preflightDocumentUpload(params: {
     document: toDocumentView(document),
     duplicate: false,
     requiresUpload: true,
-    upload: {
-      pathname: buildDocumentBlobPathname(document._id.toHexString()),
-      handleUploadUrl: "/api/upload/blob",
-    },
+    upload: getUploadInstructions(document._id),
   };
 }
 
@@ -160,5 +138,102 @@ export async function authorizeDocumentBlobUpload(params: {
       sizeBytes: document.sizeBytes,
       contentHash: document.contentHash,
     },
+  };
+}
+
+async function resolveExistingDocumentPreflight(params: {
+  document: Document;
+  chatId: ObjectId;
+}): Promise<UploadPreflightResult> {
+  await attachDocumentToChat({
+    workspaceId: params.document.workspaceId,
+    chatId: params.chatId,
+    documentId: params.document._id,
+  });
+
+  if (params.document.status === "pending_upload") {
+    return existingDocumentUploadResult(params.document);
+  }
+
+  if (params.document.status === "failed" && !params.document.blobPathname) {
+    const document = await resetFailedDocumentToPendingUpload(params.document);
+    return existingDocumentUploadResult(document);
+  }
+
+  return {
+    document: toDocumentView(params.document),
+    duplicate: true,
+    requiresUpload: false,
+  };
+}
+
+function existingDocumentUploadResult(document: Document): UploadPreflightResult {
+  return {
+    document: toDocumentView(document),
+    duplicate: true,
+    requiresUpload: true,
+    upload: getUploadInstructions(document._id),
+  };
+}
+
+async function createPendingDocument(params: {
+  workspaceId: string;
+  name: string;
+  contentHash: string;
+  sizeBytes: number;
+}): Promise<Document> {
+  const now = new Date();
+  const document: Document = {
+    _id: new ObjectId(),
+    workspaceId: params.workspaceId,
+    name: await resolveWorkspaceDocumentName(params.workspaceId, params.name),
+    contentHash: params.contentHash,
+    sizeBytes: params.sizeBytes,
+    status: "pending_upload",
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  const documents = await documentsCollection();
+  await documents.insertOne(document);
+
+  return document;
+}
+
+async function resetFailedDocumentToPendingUpload(
+  document: Document,
+): Promise<Document> {
+  const documents = await documentsCollection();
+  const result = await documents.findOneAndUpdate(
+    {
+      _id: document._id,
+      workspaceId: document.workspaceId,
+      status: "failed",
+      blobPathname: { $exists: false },
+    },
+    {
+      $set: {
+        status: "pending_upload",
+        updatedAt: new Date(),
+      },
+      $unset: {
+        stage: "",
+        progress: "",
+        error: "",
+        pageCount: "",
+      },
+    },
+    {
+      returnDocument: "after",
+    },
+  );
+
+  return result ?? document;
+}
+
+function getUploadInstructions(documentId: ObjectId): DocumentUploadInstructions {
+  return {
+    pathname: buildDocumentBlobPathname(documentId.toHexString()),
+    handleUploadUrl: "/api/upload/blob",
   };
 }
