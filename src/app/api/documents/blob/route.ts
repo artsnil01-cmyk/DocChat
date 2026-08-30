@@ -1,6 +1,6 @@
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { ObjectId } from "mongodb";
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 
 import { documentConfig } from "@/config/documents";
 import { authenticationErrorResponse } from "@/lib/api/errors";
@@ -12,9 +12,12 @@ import {
 import {
   authorizeDocumentBlobUpload,
   completeDocumentBlobUpload,
+  processDocument,
 } from "@/lib/documents/service";
 import { getBlobMetadata } from "@/lib/documents/storage";
 import { serverEnv } from "@/lib/env/server";
+
+export const maxDuration = 300;
 
 export async function POST(request: NextRequest) {
   const body = await readJson(request);
@@ -85,6 +88,29 @@ export async function POST(request: NextRequest) {
 
       if (!result.ok) {
         throw new Error(`Blob upload completion rejected: ${result.reason}.`);
+      }
+
+      if (!result.duplicate) {
+        after(async () => {
+          try {
+            const processResult = await processDocument({
+              workspaceId: parsedPayload.data.workspaceId,
+              documentId: new ObjectId(parsedPayload.data.documentId),
+            });
+
+            if (!processResult.ok) {
+              console.error("Document ingestion trigger failed.", {
+                documentId: parsedPayload.data.documentId,
+                reason: processResult.reason,
+              });
+            }
+          } catch (error) {
+            console.error("Document ingestion trigger errored.", {
+              documentId: parsedPayload.data.documentId,
+              error,
+            });
+          }
+        });
       }
     },
   });
