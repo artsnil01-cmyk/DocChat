@@ -77,7 +77,7 @@ Indexes:
 - `sizeBytes: number`
 - `pageCount?: number`
 - `status: "pending_upload" | "processing" | "ready" | "failed"`
-- `stage?: "reading" | "preparing" | "indexing"`
+- `stage?: "reading" | "normalizing" | "chunking" | "embedding" | "indexing"`
 - `progress?: number`
 - `error?: { code: string; message: string }`
 - `createdAt: Date`

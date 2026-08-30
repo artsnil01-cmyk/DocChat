@@ -23,7 +23,12 @@ type DocumentStatus =
 Detailed work can be surfaced through:
 
 ```ts
-type DocumentStage = "reading" | "preparing" | "indexing";
+type DocumentStage =
+  | "reading"
+  | "normalizing"
+  | "chunking"
+  | "embedding"
+  | "indexing";
 ```
 
 ## Deduplication

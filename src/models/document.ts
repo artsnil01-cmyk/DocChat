@@ -6,7 +6,12 @@ export type DocumentStatus =
   | "ready"
   | "failed";
 
-export type DocumentStage = "reading" | "preparing" | "indexing";
+export type DocumentStage =
+  | "reading"
+  | "normalizing"
+  | "chunking"
+  | "embedding"
+  | "indexing";
 
 export type DocumentError = {
   code: string;
