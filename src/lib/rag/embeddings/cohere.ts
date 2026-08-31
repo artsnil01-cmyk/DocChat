@@ -1,24 +1,15 @@
 import "server-only";
 
-import { CohereEmbeddings } from "@langchain/cohere";
+import { CohereClientV2 } from "cohere-ai";
 
 import type { RagStrategy } from "@/config/rag";
 import { serverEnv } from "@/lib/env/server";
 
 type CohereEmbeddingInputType = "search_document" | "search_query";
 
-function createCohereEmbeddings(params: {
-  strategy: RagStrategy;
-  inputType: CohereEmbeddingInputType;
-}): CohereEmbeddings {
-  return new CohereEmbeddings({
-    apiKey: serverEnv.cohereApiKey,
-    model: params.strategy.embedding.model,
-    batchSize: params.strategy.embedding.batchSize,
-    inputType: params.inputType,
-    embeddingTypes: ["float"],
-  });
-}
+const cohere = new CohereClientV2({
+  token: serverEnv.cohereApiKey,
+});
 
 export async function embedDocumentTexts(params: {
   texts: string[];
@@ -28,18 +19,48 @@ export async function embedDocumentTexts(params: {
     return [];
   }
 
-  return createCohereEmbeddings({
+  return embedTexts({
+    texts: params.texts,
     strategy: params.strategy,
     inputType: "search_document",
-  }).embedDocuments(params.texts);
+  });
 }
 
 export async function embedSearchQuery(params: {
   text: string;
   strategy: RagStrategy;
 }): Promise<number[]> {
-  return createCohereEmbeddings({
+  const [embedding] = await embedTexts({
+    texts: [params.text],
     strategy: params.strategy,
     inputType: "search_query",
-  }).embedQuery(params.text);
+  });
+
+  if (!embedding) {
+    throw new Error("Cohere did not return a search query embedding.");
+  }
+
+  return embedding;
+}
+
+async function embedTexts(params: {
+  texts: string[];
+  strategy: RagStrategy;
+  inputType: CohereEmbeddingInputType;
+}): Promise<number[][]> {
+  const response = await cohere.embed({
+    model: params.strategy.embedding.model,
+    texts: params.texts,
+    inputType: params.inputType,
+    embeddingTypes: ["float"],
+    outputDimension: params.strategy.embedding.dimensions,
+  });
+
+  const embeddings = response.embeddings.float;
+
+  if (!embeddings) {
+    throw new Error("Cohere did not return float embeddings.");
+  }
+
+  return embeddings;
 }

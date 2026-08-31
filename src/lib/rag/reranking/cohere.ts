@@ -1,6 +1,6 @@
 import "server-only";
 
-import { CohereRerank } from "@langchain/cohere";
+import { CohereClientV2 } from "cohere-ai";
 
 import type { RagStrategy } from "@/config/rag";
 import { serverEnv } from "@/lib/env/server";
@@ -9,6 +9,10 @@ export type CohereRerankResult = {
   index: number;
   relevanceScore: number;
 };
+
+const cohere = new CohereClientV2({
+  token: serverEnv.cohereApiKey,
+});
 
 export async function rerankTextsWithCohere(params: {
   query: string;
@@ -19,11 +23,15 @@ export async function rerankTextsWithCohere(params: {
     return [];
   }
 
-  const reranker = new CohereRerank({
-    apiKey: serverEnv.cohereApiKey,
+  const response = await cohere.rerank({
     model: params.strategy.reranker.model,
     topN: Math.min(params.strategy.retrieval.rerankLimit, params.texts.length),
+    query: params.query,
+    documents: params.texts,
   });
 
-  return reranker.rerank(params.texts, params.query);
+  return response.results.map((result) => ({
+    index: result.index,
+    relevanceScore: result.relevanceScore,
+  }));
 }

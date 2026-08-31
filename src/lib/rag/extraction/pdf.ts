@@ -1,8 +1,8 @@
-import { getDocument } from "pdfjs-dist";
-import type {
+import {
+  getDocument,
   TextItem,
   TextMarkedContent,
-} from "pdfjs-dist/types/src/display/api";
+} from "pdfjs-serverless";
 
 import {
   pdfNoExtractableText,
