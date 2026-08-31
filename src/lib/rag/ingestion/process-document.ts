@@ -13,9 +13,13 @@ import {
   verifyDocumentBlobHash,
 } from "@/lib/documents/storage";
 import { serverEnv } from "@/lib/env/server";
+import {
+  buildPageAwareChunks,
+  persistChunkDrafts,
+} from "@/lib/rag/chunking";
 import { extractPdfText } from "@/lib/rag/extraction";
 import { normalizePdfText } from "@/lib/rag/normalization";
-import type { DocumentError } from "@/models/document";
+import type { DocumentError, DocumentStage } from "@/models/document";
 
 export type RunDocumentIngestionResult =
   | {
@@ -30,6 +34,8 @@ export type RunDocumentIngestionResult =
         | "content_hash_mismatch"
         | "pdf_extraction_failed"
         | "pdf_normalization_failed"
+        | "chunking_failed"
+        | "chunk_persistence_failed"
         | "not_implemented"
         | "lock_lost";
     };
@@ -119,8 +125,51 @@ export async function runDocumentIngestion(params: {
       return { ok: false, reason: "lock_lost" };
     }
 
+    const chunkingResult = buildPageAwareChunks({
+      document: normalizationResult.document,
+      strategy,
+    });
+
+    if (!chunkingResult.ok) {
+      return failDocument(lifecycle, {
+        stage: "chunking",
+        reason: "chunking_failed",
+        error: {
+          code: chunkingResult.code.toLowerCase(),
+          message: chunkingResult.message,
+        },
+      });
+    }
+
+    try {
+      await persistChunkDrafts({
+        documentId: document._id,
+        strategyVersion: serverEnv.ragStrategyVersion,
+        parents: chunkingResult.parents,
+        children: chunkingResult.children,
+      });
+    } catch {
+      return failDocument(lifecycle, {
+        stage: "chunking",
+        reason: "chunk_persistence_failed",
+        error: {
+          code: "chunk_persistence_failed",
+          message: "Document chunks could not be persisted.",
+        },
+      });
+    }
+
+    const embeddingDocument = await lifecycle.markProcessing({
+      stage: "embedding",
+      progress: strategy.progress.embedding,
+    });
+
+    if (!embeddingDocument) {
+      return { ok: false, reason: "lock_lost" };
+    }
+
     return failDocument(lifecycle, {
-      stage: "chunking",
+      stage: "embedding",
       reason: "not_implemented",
       error: {
         code: "rag_ingestion_not_implemented",
@@ -206,7 +255,7 @@ async function failDocument<
 >(
   lifecycle: LockedDocumentLifecycle,
   params: {
-    stage: "reading" | "normalizing" | "chunking";
+    stage: DocumentStage;
     reason: Reason;
     error: DocumentError;
   },
