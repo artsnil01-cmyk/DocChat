@@ -38,6 +38,23 @@ export async function getWorkspaceDocumentRecord(params: {
   });
 }
 
+export async function listWorkspaceDocumentRecordsByIds(params: {
+  workspaceId: string;
+  documentIds: ObjectId[];
+}): Promise<Document[]> {
+  if (params.documentIds.length === 0) {
+    return [];
+  }
+
+  const documents = await documentsCollection();
+  return documents
+    .find({
+      _id: { $in: params.documentIds },
+      workspaceId: params.workspaceId,
+    })
+    .toArray();
+}
+
 export async function findWorkspaceDocumentByContentHash(params: {
   workspaceId: string;
   contentHash: string;

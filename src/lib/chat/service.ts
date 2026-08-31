@@ -66,11 +66,7 @@ export async function getChatDetail(params: {
   chatId: ObjectId;
   workspaceId: string;
 }): Promise<ChatDetail | null> {
-  const chats = await chatsCollection();
-  const chat = await chats.findOne({
-    _id: params.chatId,
-    workspaceId: params.workspaceId,
-  });
+  const chat = await getWorkspaceChatRecord(params);
 
   if (!chat) {
     return null;
@@ -89,20 +85,28 @@ export async function getChatDetail(params: {
   };
 }
 
+export async function getWorkspaceChatRecord(params: {
+  chatId: ObjectId;
+  workspaceId: string;
+}): Promise<Chat | null> {
+  const chats = await chatsCollection();
+  return chats.findOne({
+    _id: params.chatId,
+    workspaceId: params.workspaceId,
+  });
+}
+
 export async function deleteChat(params: {
   chatId: ObjectId;
   workspaceId: string;
 }): Promise<boolean> {
-  const chats = await chatsCollection();
-  const chat = await chats.findOne({
-    _id: params.chatId,
-    workspaceId: params.workspaceId,
-  });
+  const chat = await getWorkspaceChatRecord(params);
 
   if (!chat) {
     return false;
   }
 
+  const chats = await chatsCollection();
   const messages = await messagesCollection();
   await Promise.all([
     messages.deleteMany({ chatId: chat._id }),
