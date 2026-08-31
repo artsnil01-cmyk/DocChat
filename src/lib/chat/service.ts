@@ -36,12 +36,22 @@ export async function createChat(params: {
   workspaceId: string;
   title?: string;
 }): Promise<ChatSummary> {
+  const chat = await createChatRecord(params);
+
+  return toChatSummary(chat);
+}
+
+export async function createChatRecord(params: {
+  workspaceId: string;
+  title?: string;
+  documentIds?: ObjectId[];
+}): Promise<Chat> {
   const now = new Date();
   const chat: Chat = {
     _id: new ObjectId(),
     workspaceId: params.workspaceId,
     title: params.title ?? chatConfig.defaultTitle,
-    documentIds: [],
+    documentIds: uniqueObjectIds(params.documentIds ?? []),
     createdAt: now,
     updatedAt: now,
   };
@@ -49,7 +59,7 @@ export async function createChat(params: {
   const chats = await chatsCollection();
   await chats.insertOne(chat);
 
-  return toChatSummary(chat);
+  return chat;
 }
 
 export async function listChats(workspaceId: string): Promise<ChatSummary[]> {
@@ -116,6 +126,67 @@ export async function deleteChat(params: {
   return true;
 }
 
+export async function attachDocumentsToChat(params: {
+  chatId: ObjectId;
+  workspaceId: string;
+  documentIds: ObjectId[];
+}): Promise<Chat | null> {
+  const chats = await chatsCollection();
+  const now = new Date();
+
+  await chats.updateOne(
+    {
+      _id: params.chatId,
+      workspaceId: params.workspaceId,
+    },
+    {
+      $addToSet: {
+        documentIds: {
+          $each: params.documentIds,
+        },
+      },
+      $set: {
+        updatedAt: now,
+      },
+    },
+  );
+
+  return getWorkspaceChatRecord({
+    chatId: params.chatId,
+    workspaceId: params.workspaceId,
+  });
+}
+
+export async function updateChatTitleIfDefault(params: {
+  chatId: ObjectId;
+  workspaceId: string;
+  title: string;
+}): Promise<Chat | null> {
+  const chats = await chatsCollection();
+  const now = new Date();
+  const result = await chats.findOneAndUpdate(
+    {
+      _id: params.chatId,
+      workspaceId: params.workspaceId,
+      title: chatConfig.defaultTitle,
+    },
+    {
+      $set: {
+        title: params.title,
+        updatedAt: now,
+      },
+    },
+    {
+      returnDocument: "after",
+    },
+  );
+
+  return result ?? getWorkspaceChatRecord({
+    chatId: params.chatId,
+    workspaceId: params.workspaceId,
+  });
+}
+
 function toChatSummary(chat: Chat): ChatSummary {
   return {
     id: chat._id.toHexString(),
@@ -139,4 +210,19 @@ function toChatMessageView(message: Message): ChatMessageView {
     })),
     createdAt: message.createdAt.toISOString(),
   };
+}
+
+function uniqueObjectIds(documentIds: ObjectId[]): ObjectId[] {
+  const seen = new Set<string>();
+
+  return documentIds.filter((documentId) => {
+    const value = documentId.toHexString();
+
+    if (seen.has(value)) {
+      return false;
+    }
+
+    seen.add(value);
+    return true;
+  });
 }
