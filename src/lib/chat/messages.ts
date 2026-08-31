@@ -3,7 +3,7 @@ import "server-only";
 import { ObjectId } from "mongodb";
 
 import { chatConfig } from "@/config/chat";
-import { messagesCollection } from "@/lib/db/collections";
+import { chatsCollection, messagesCollection } from "@/lib/db/collections";
 import type { AnswerEvidenceBlock } from "@/lib/rag/context";
 import type { Message, MessageRole, MessageSource } from "@/models/message";
 
@@ -74,7 +74,20 @@ async function createMessage(params: {
     createdAt: new Date(),
   };
   const messages = await messagesCollection();
-  await messages.insertOne(message);
+  const chats = await chatsCollection();
+  await Promise.all([
+    messages.insertOne(message),
+    chats.updateOne(
+      {
+        _id: params.chatId,
+      },
+      {
+        $set: {
+          updatedAt: message.createdAt,
+        },
+      },
+    ),
+  ]);
 
   return message;
 }

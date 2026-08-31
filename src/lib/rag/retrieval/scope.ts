@@ -25,6 +25,18 @@ export type RetrievalScopeResult =
       documentId?: ObjectId;
     };
 
+export type ReadyWorkspaceDocumentsResult =
+  | {
+      ok: true;
+      documentIds: ObjectId[];
+      documents: Document[];
+    }
+  | {
+      ok: false;
+      reason: "empty_document_scope" | "document_not_found" | "document_not_ready";
+      documentId?: ObjectId;
+    };
+
 export async function resolveRetrievalScope(params: {
   workspaceId: string;
   chatId: ObjectId;
@@ -40,7 +52,29 @@ export async function resolveRetrievalScope(params: {
     return { ok: false, reason: "chat_not_found" };
   }
 
-  const documentIds = uniqueObjectIds(params.documentIds ?? chat.documentIds);
+  const documentsResult = await resolveReadyWorkspaceDocuments({
+    workspaceId: params.workspaceId,
+    documentIds: params.documentIds ?? chat.documentIds,
+  });
+
+  if (!documentsResult.ok) {
+    return documentsResult;
+  }
+
+  return {
+    ok: true,
+    chat,
+    question: params.question,
+    documentIds: documentsResult.documentIds,
+    documents: documentsResult.documents,
+  };
+}
+
+export async function resolveReadyWorkspaceDocuments(params: {
+  workspaceId: string;
+  documentIds: ObjectId[];
+}): Promise<ReadyWorkspaceDocumentsResult> {
+  const documentIds = uniqueObjectIds(params.documentIds);
 
   if (documentIds.length === 0) {
     return { ok: false, reason: "empty_document_scope" };
@@ -79,8 +113,6 @@ export async function resolveRetrievalScope(params: {
 
   return {
     ok: true,
-    chat,
-    question: params.question,
     documentIds,
     documents: orderedDocuments,
   };

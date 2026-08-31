@@ -187,7 +187,7 @@ export async function updateChatTitleIfDefault(params: {
   });
 }
 
-function toChatSummary(chat: Chat): ChatSummary {
+export function toChatSummary(chat: Chat): ChatSummary {
   return {
     id: chat._id.toHexString(),
     title: chat.title,
@@ -197,7 +197,7 @@ function toChatSummary(chat: Chat): ChatSummary {
   };
 }
 
-function toChatMessageView(message: Message): ChatMessageView {
+export function toChatMessageView(message: Message): ChatMessageView {
   return {
     id: message._id.toHexString(),
     chatId: message.chatId.toHexString(),
