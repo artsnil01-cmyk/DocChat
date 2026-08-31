@@ -10,7 +10,6 @@ PDF bytes are uploaded directly from the browser to private Vercel Blob storage.
 | `POST /api/documents/blob` | Vercel Blob SDK and Blob service | Client upload token generation and upload completion callback. |
 | `GET /api/documents` | Frontend | Workspace document library listing. |
 | `GET /api/documents/{documentId}/status` | Frontend | Status polling. |
-| `DELETE /api/documents/{documentId}?chatId=...` | Frontend | Detach document from a chat. |
 | `DELETE /api/documents/{documentId}` | Frontend | Delete document from the workspace library. |
 
 ## Flow
@@ -59,6 +58,5 @@ npm run dev
 - Blob pathnames are stable: `documents/{documentId}/original.pdf`.
 - Backend hash verification is authoritative.
 - Hash mismatch deletes the uploaded Blob and document record.
-- Detaching from a chat does not delete the workspace document.
 - Global delete removes the document from all workspace chats, then deletes chunks, Blob, and document record.
 - Global delete returns conflict while an active processing lock exists.

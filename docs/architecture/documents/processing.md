@@ -2,6 +2,8 @@
 
 Processing starts after Blob completion or through an explicit retry. The ingestion runner resumes from the stored durable stage.
 
+See `documents/ingestion.md` for the PDF-to-chunks pipeline.
+
 ## Statuses
 
 ```ts
@@ -50,7 +52,7 @@ If cancellation is requested:
 - release `processingLock`;
 - keep Blob data for retry or explicit delete.
 
-`pending_upload` documents can be deleted immediately. `processing` documents are cancelled before deletion. `ready`, `failed`, and `cancelled` documents can be deleted explicitly.
+`pending_upload` documents can be deleted immediately. `processing` documents are cancelled before deletion. `ready`, `failed`, and `cancelled` documents can be deleted explicitly from the workspace library.
 
 ## Process Route Results
 
