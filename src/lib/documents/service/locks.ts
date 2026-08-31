@@ -64,7 +64,7 @@ export async function acquireDocumentProcessingLock(params: {
       _id: params.documentId,
       workspaceId: params.workspaceId,
       blobPathname: { $exists: true },
-      status: { $in: ["processing", "failed"] },
+      status: { $in: ["processing", "failed", "cancelled"] },
       $or: [
         { processingLock: { $exists: false } },
         { "processingLock.expiresAt": { $lte: now } },
@@ -73,7 +73,11 @@ export async function acquireDocumentProcessingLock(params: {
     {
       $set: {
         processingLock: lock,
+        status: "processing",
         updatedAt: now,
+      },
+      $unset: {
+        cancelRequestedAt: "",
       },
     },
     {
@@ -120,5 +124,7 @@ export async function releaseDocumentProcessingLock(params: {
 }
 
 function canAcquireProcessingLock(status: Document["status"]): boolean {
-  return status === "processing" || status === "failed";
+  return (
+    status === "processing" || status === "failed" || status === "cancelled"
+  );
 }

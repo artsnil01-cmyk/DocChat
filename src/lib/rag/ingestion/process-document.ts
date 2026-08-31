@@ -2,11 +2,9 @@ import "server-only";
 
 import type { ObjectId } from "mongodb";
 
-import { getRagStrategy } from "@/config/rag";
+import { getRagStrategy, type RagStrategy } from "@/config/rag";
 import { isDocumentProcessingCancelRequested } from "@/lib/documents/service/cancellation";
-import {
-  createLockedDocumentLifecycle,
-} from "@/lib/documents/service/lifecycle";
+import { createLockedDocumentLifecycle } from "@/lib/documents/service/lifecycle";
 import { releaseDocumentProcessingLock } from "@/lib/documents/service/locks";
 import { getWorkspaceDocumentRecord } from "@/lib/documents/service/queries";
 import {
@@ -21,7 +19,11 @@ import {
 import { embedDocumentChunks } from "@/lib/rag/embeddings";
 import { extractPdfText } from "@/lib/rag/extraction";
 import { normalizePdfText } from "@/lib/rag/normalization";
-import type { DocumentError, DocumentStage } from "@/models/document";
+import type {
+  Document,
+  DocumentError,
+  DocumentStage,
+} from "@/models/document";
 
 export type RunDocumentIngestionResult =
   | {
@@ -39,11 +41,48 @@ export type RunDocumentIngestionResult =
         | "chunking_failed"
         | "chunk_persistence_failed"
         | "embedding_failed"
+        | "page_count_missing"
         | "cancelled"
         | "lock_lost";
     };
 
+type IngestionFailure = Exclude<RunDocumentIngestionResult, { ok: true }>;
+type IngestionFailureReason = IngestionFailure["reason"];
 type LockedDocumentLifecycle = ReturnType<typeof createLockedDocumentLifecycle>;
+
+type StageContext = {
+  lifecycle: LockedDocumentLifecycle;
+  workspaceId: string;
+  documentId: ObjectId;
+};
+
+type StageWorkResult<TOutput> =
+  | {
+      ok: true;
+      output: TOutput;
+    }
+  | {
+      ok: false;
+      reason: IngestionFailureReason;
+      error: DocumentError;
+    };
+
+type StageRunResult<TOutput> =
+  | {
+      ok: true;
+      output: TOutput;
+    }
+  | IngestionFailure;
+
+type ReadingStageOutput = {
+  pageCount: number;
+};
+
+const orderedDocumentStages = [
+  "reading",
+  "embedding",
+  "indexing",
+] as const satisfies readonly DocumentStage[];
 
 export async function runDocumentIngestion(params: {
   workspaceId: string;
@@ -52,6 +91,11 @@ export async function runDocumentIngestion(params: {
 }): Promise<RunDocumentIngestionResult> {
   const strategy = getRagStrategy(serverEnv.ragStrategyVersion);
   const lifecycle = createLockedDocumentLifecycle(params);
+  const context = {
+    lifecycle,
+    workspaceId: params.workspaceId,
+    documentId: params.documentId,
+  } satisfies StageContext;
 
   try {
     const document = await getWorkspaceDocumentRecord(params);
@@ -60,209 +104,63 @@ export async function runDocumentIngestion(params: {
       return { ok: false, reason: "not_found" };
     }
 
-    if (!document.blobPathname) {
-      return failAtReading(lifecycle, {
-        reason: "missing_blob",
-        code: "missing_blob",
-        message: "Document Blob is missing.",
+    const stages = getStagesToRun(document.stage);
+    let pageCount = document.pageCount;
+
+    if (stages.includes("reading")) {
+      const readingResult = await runStage({
+        context,
+        stage: "reading",
+        progress: strategy.progress.reading,
+        work: () =>
+          runReadingStage({
+            document,
+            lifecycle,
+            strategy,
+          }),
       });
+
+      if (!readingResult.ok) {
+        return readingResult;
+      }
+
+      pageCount = readingResult.output.pageCount;
     }
 
-    const readingStarted = await markStage(lifecycle, {
-      stage: "reading",
-      progress: strategy.progress.reading,
-    });
-
-    if (!readingStarted.ok) {
-      return readingStarted;
-    }
-
-    const initialCancellation = await stopIfCancellationRequested(
-      lifecycle,
-      params,
-      "reading",
-    );
-
-    if (initialCancellation) {
-      return initialCancellation;
-    }
-
-    const blobBytesResult = await readVerifiedBlobBytes({
-      lifecycle,
-      pathname: document.blobPathname,
-      expectedHash: document.contentHash,
-    });
-
-    if (!blobBytesResult.ok) {
-      return { ok: false, reason: blobBytesResult.reason };
-    }
-
-    const extractionResult = await extractPdfText(blobBytesResult.bytes);
-
-    if (!extractionResult.ok) {
-      return failAtReading(lifecycle, {
-        reason: "pdf_extraction_failed",
-        code: extractionResult.code.toLowerCase(),
-        message: extractionResult.message,
-      });
-    }
-
-    const readingCancellation = await stopIfCancellationRequested(
-      lifecycle,
-      params,
-      "reading",
-    );
-
-    if (readingCancellation) {
-      return readingCancellation;
-    }
-
-    const normalizingStarted = await markStage(lifecycle, {
-      stage: "normalizing",
-      progress: strategy.progress.normalizing,
-    });
-
-    if (!normalizingStarted.ok) {
-      return normalizingStarted;
-    }
-
-    const normalizationResult = normalizePdfText(extractionResult.document);
-
-    if (!normalizationResult.ok) {
-      return failDocument(lifecycle, {
-        stage: "normalizing",
-        reason: "pdf_normalization_failed",
-        error: {
-          code: normalizationResult.code.toLowerCase(),
-          message: normalizationResult.message,
-        },
-      });
-    }
-
-    const normalizingCancellation = await stopIfCancellationRequested(
-      lifecycle,
-      params,
-      "normalizing",
-    );
-
-    if (normalizingCancellation) {
-      return normalizingCancellation;
-    }
-
-    const chunkingStarted = await markStage(lifecycle, {
-      stage: "chunking",
-      progress: strategy.progress.chunking,
-    });
-
-    if (!chunkingStarted.ok) {
-      return chunkingStarted;
-    }
-
-    const chunkingResult = buildPageAwareChunks({
-      document: normalizationResult.document,
-      strategy,
-    });
-
-    if (!chunkingResult.ok) {
-      return failDocument(lifecycle, {
-        stage: "chunking",
-        reason: "chunking_failed",
-        error: {
-          code: chunkingResult.code.toLowerCase(),
-          message: chunkingResult.message,
-        },
-      });
-    }
-
-    try {
-      await persistChunkDrafts({
-        documentId: document._id,
-        strategyVersion: serverEnv.ragStrategyVersion,
-        parents: chunkingResult.parents,
-        children: chunkingResult.children,
-      });
-    } catch {
-      return failDocument(lifecycle, {
-        stage: "chunking",
-        reason: "chunk_persistence_failed",
-        error: {
-          code: "chunk_persistence_failed",
-          message: "Document chunks could not be persisted.",
-        },
-      });
-    }
-
-    const chunkingCancellation = await stopIfCancellationRequested(
-      lifecycle,
-      params,
-      "chunking",
-    );
-
-    if (chunkingCancellation) {
-      return chunkingCancellation;
-    }
-
-    const embeddingStarted = await markStage(lifecycle, {
-      stage: "embedding",
-      progress: strategy.progress.embedding,
-    });
-
-    if (!embeddingStarted.ok) {
-      return embeddingStarted;
-    }
-
-    try {
-      await embedDocumentChunks({
-        documentId: document._id,
-        strategyVersion: serverEnv.ragStrategyVersion,
-        strategy,
-      });
-    } catch {
-      return failDocument(lifecycle, {
+    if (stages.includes("embedding")) {
+      const embeddingResult = await runStage({
+        context,
         stage: "embedding",
-        reason: "embedding_failed",
-        error: {
-          code: "embedding_failed",
-          message: "Document chunk embeddings could not be generated.",
-        },
+        progress: strategy.progress.embedding,
+        work: () =>
+          runEmbeddingStage({
+            document,
+            strategy,
+          }),
       });
+
+      if (!embeddingResult.ok) {
+        return embeddingResult;
+      }
     }
 
-    const embeddingCancellation = await stopIfCancellationRequested(
-      lifecycle,
-      params,
-      "embedding",
-    );
+    if (stages.includes("indexing")) {
+      const indexingResult = await runStage({
+        context,
+        stage: "indexing",
+        progress: strategy.progress.indexing,
+        checkCancellationAfter: false,
+        work: () =>
+          runIndexingStage({
+            context,
+            lifecycle,
+            pageCount,
+          }),
+      });
 
-    if (embeddingCancellation) {
-      return embeddingCancellation;
-    }
-
-    const indexingStarted = await markStage(lifecycle, {
-      stage: "indexing",
-      progress: strategy.progress.indexing,
-    });
-
-    if (!indexingStarted.ok) {
-      return indexingStarted;
-    }
-
-    const indexingCancellation = await stopIfCancellationRequested(
-      lifecycle,
-      params,
-      "indexing",
-    );
-
-    if (indexingCancellation) {
-      return indexingCancellation;
-    }
-
-    const readyDocument = await lifecycle.markReady({
-      pageCount: extractionResult.document.pageCount,
-    });
-
-    if (!readyDocument) {
-      return { ok: false, reason: "lock_lost" };
+      if (!indexingResult.ok) {
+        return indexingResult;
+      }
     }
 
     return { ok: true };
@@ -275,33 +173,249 @@ export async function runDocumentIngestion(params: {
   }
 }
 
-async function markStage(
-  lifecycle: LockedDocumentLifecycle,
-  params: {
-    stage: DocumentStage;
-    progress: number;
-  },
-): Promise<{ ok: true } | { ok: false; reason: "lock_lost" }> {
-  const document = await lifecycle.markProcessing(params);
+function getStagesToRun(stage: Document["stage"]): readonly DocumentStage[] {
+  const stageIndex = orderedDocumentStages.findIndex(
+    (orderedStage) => orderedStage === (stage ?? "reading"),
+  );
 
-  return document ? { ok: true } : { ok: false, reason: "lock_lost" };
+  if (stageIndex < 0) {
+    return orderedDocumentStages;
+  }
+
+  return orderedDocumentStages.slice(stageIndex);
+}
+
+async function runStage<TOutput>(params: {
+  context: StageContext;
+  stage: DocumentStage;
+  progress: number;
+  checkCancellationAfter?: boolean;
+  work: () => Promise<StageWorkResult<TOutput>>;
+}): Promise<StageRunResult<TOutput>> {
+  const stageMarked = await params.context.lifecycle.markProcessing({
+    stage: params.stage,
+    progress: params.progress,
+  });
+
+  if (!stageMarked) {
+    return { ok: false, reason: "lock_lost" };
+  }
+
+  const beforeWorkCancellation = await stopIfCancellationRequested(
+    params.context,
+    params.stage,
+  );
+
+  if (beforeWorkCancellation) {
+    return beforeWorkCancellation;
+  }
+
+  const workResult = await params.work();
+
+  if (!workResult.ok) {
+    if (workResult.reason === "lock_lost") {
+      return { ok: false, reason: "lock_lost" };
+    }
+
+    return failDocument(params.context.lifecycle, {
+      stage: params.stage,
+      reason: workResult.reason,
+      error: workResult.error,
+    });
+  }
+
+  if (params.checkCancellationAfter !== false) {
+    const afterWorkCancellation = await stopIfCancellationRequested(
+      params.context,
+      params.stage,
+    );
+
+    if (afterWorkCancellation) {
+      return afterWorkCancellation;
+    }
+  }
+
+  return workResult;
+}
+
+async function runReadingStage(params: {
+  document: Document;
+  lifecycle: LockedDocumentLifecycle;
+  strategy: RagStrategy;
+}): Promise<StageWorkResult<ReadingStageOutput>> {
+  if (!params.document.blobPathname) {
+    return stageFailure({
+      reason: "missing_blob",
+      code: "missing_blob",
+      message: "Document Blob is missing.",
+    });
+  }
+
+  const blobBytesResult = await readVerifiedBlobBytes({
+    pathname: params.document.blobPathname,
+    expectedHash: params.document.contentHash,
+  });
+
+  if (!blobBytesResult.ok) {
+    return blobBytesResult;
+  }
+
+  const extractionResult = await extractPdfText(blobBytesResult.output.bytes);
+
+  if (!extractionResult.ok) {
+    return stageFailure({
+      reason: "pdf_extraction_failed",
+      code: extractionResult.code.toLowerCase(),
+      message: extractionResult.message,
+    });
+  }
+
+  const normalizationResult = normalizePdfText(extractionResult.document);
+
+  if (!normalizationResult.ok) {
+    return stageFailure({
+      reason: "pdf_normalization_failed",
+      code: normalizationResult.code.toLowerCase(),
+      message: normalizationResult.message,
+    });
+  }
+
+  const chunkingResult = buildPageAwareChunks({
+    document: normalizationResult.document,
+    strategy: params.strategy,
+  });
+
+  if (!chunkingResult.ok) {
+    return stageFailure({
+      reason: "chunking_failed",
+      code: chunkingResult.code.toLowerCase(),
+      message: chunkingResult.message,
+    });
+  }
+
+  try {
+    await persistChunkDrafts({
+      documentId: params.document._id,
+      strategyVersion: serverEnv.ragStrategyVersion,
+      parents: chunkingResult.parents,
+      children: chunkingResult.children,
+    });
+  } catch {
+    return stageFailure({
+      reason: "chunk_persistence_failed",
+      code: "chunk_persistence_failed",
+      message: "Document chunks could not be persisted.",
+    });
+  }
+
+  const pageCountDocument = await params.lifecycle.markPageCount({
+    pageCount: extractionResult.document.pageCount,
+  });
+
+  if (!pageCountDocument) {
+    return {
+      ok: false,
+      reason: "lock_lost",
+      error: {
+        code: "lock_lost",
+        message: "Document processing lock was lost.",
+      },
+    };
+  }
+
+  return {
+    ok: true,
+    output: {
+      pageCount: extractionResult.document.pageCount,
+    },
+  };
+}
+
+async function runEmbeddingStage(params: {
+  document: Document;
+  strategy: RagStrategy;
+}): Promise<StageWorkResult<undefined>> {
+  try {
+    await embedDocumentChunks({
+      documentId: params.document._id,
+      strategyVersion: serverEnv.ragStrategyVersion,
+      strategy: params.strategy,
+    });
+  } catch {
+    return stageFailure({
+      reason: "embedding_failed",
+      code: "embedding_failed",
+      message: "Document chunk embeddings could not be generated.",
+    });
+  }
+
+  return {
+    ok: true,
+    output: undefined,
+  };
+}
+
+async function runIndexingStage(params: {
+  context: StageContext;
+  lifecycle: LockedDocumentLifecycle;
+  pageCount?: number;
+}): Promise<StageWorkResult<undefined>> {
+  const pageCount = params.pageCount ?? (await getPersistedPageCount(params.context));
+
+  if (!pageCount) {
+    return stageFailure({
+      reason: "page_count_missing",
+      code: "page_count_missing",
+      message: "Document page count is missing.",
+    });
+  }
+
+  const readyDocument = await params.lifecycle.markReady({
+    pageCount,
+  });
+
+  if (!readyDocument) {
+    return {
+      ok: false,
+      reason: "lock_lost",
+      error: {
+        code: "lock_lost",
+        message: "Document processing lock was lost.",
+      },
+    };
+  }
+
+  return {
+    ok: true,
+    output: undefined,
+  };
+}
+
+async function getPersistedPageCount(
+  context: StageContext,
+): Promise<number | undefined> {
+  const document = await getWorkspaceDocumentRecord({
+    workspaceId: context.workspaceId,
+    documentId: context.documentId,
+  });
+
+  return document?.pageCount;
 }
 
 async function stopIfCancellationRequested(
-  lifecycle: LockedDocumentLifecycle,
-  params: {
-    workspaceId: string;
-    documentId: ObjectId;
-  },
+  context: StageContext,
   stage: DocumentStage,
-): Promise<RunDocumentIngestionResult | null> {
-  const cancelRequested = await isDocumentProcessingCancelRequested(params);
+): Promise<IngestionFailure | null> {
+  const cancelRequested = await isDocumentProcessingCancelRequested({
+    workspaceId: context.workspaceId,
+    documentId: context.documentId,
+  });
 
   if (!cancelRequested) {
     return null;
   }
 
-  const cancelledDocument = await lifecycle.markCancelled({ stage });
+  const cancelledDocument = await context.lifecycle.markCancelled({ stage });
 
   if (!cancelledDocument) {
     return { ok: false, reason: "lock_lost" };
@@ -311,25 +425,19 @@ async function stopIfCancellationRequested(
 }
 
 async function readVerifiedBlobBytes(params: {
-  lifecycle: LockedDocumentLifecycle;
   pathname: string;
   expectedHash: string;
 }): Promise<
-  | {
-      ok: true;
-      bytes: Uint8Array;
-    }
-  | {
-      ok: false;
-      reason: "blob_read_failed" | "content_hash_mismatch" | "lock_lost";
-    }
+  StageWorkResult<{
+    bytes: Uint8Array;
+  }>
 > {
   let bytes: Uint8Array;
 
   try {
     bytes = await readDocumentBlobBytes(params.pathname);
   } catch {
-    return failAtReading(params.lifecycle, {
+    return stageFailure({
       reason: "blob_read_failed",
       code: "blob_read_failed",
       message: "Document Blob could not be read.",
@@ -342,7 +450,7 @@ async function readVerifiedBlobBytes(params: {
       expectedHash: params.expectedHash,
     })
   ) {
-    return failAtReading(params.lifecycle, {
+    return stageFailure({
       reason: "content_hash_mismatch",
       code: "content_hash_mismatch",
       message: "Document Blob hash does not match the expected content hash.",
@@ -351,40 +459,35 @@ async function readVerifiedBlobBytes(params: {
 
   return {
     ok: true,
-    bytes,
+    output: {
+      bytes,
+    },
   };
 }
 
-function failAtReading<
-  Reason extends Exclude<RunDocumentIngestionResult, { ok: true }>["reason"],
->(
-  lifecycle: LockedDocumentLifecycle,
-  failure: {
-    reason: Reason;
-    code: string;
-    message: string;
-  },
-): Promise<{ ok: false; reason: Reason | "lock_lost" }> {
-  return failDocument(lifecycle, {
-    stage: "reading",
-    reason: failure.reason,
+function stageFailure(params: {
+  reason: IngestionFailureReason;
+  code: string;
+  message: string;
+}): StageWorkResult<never> {
+  return {
+    ok: false,
+    reason: params.reason,
     error: {
-      code: failure.code,
-      message: failure.message,
+      code: params.code,
+      message: params.message,
     },
-  });
+  };
 }
 
-async function failDocument<
-  Reason extends Exclude<RunDocumentIngestionResult, { ok: true }>["reason"],
->(
+async function failDocument(
   lifecycle: LockedDocumentLifecycle,
   params: {
     stage: DocumentStage;
-    reason: Reason;
+    reason: IngestionFailureReason;
     error: DocumentError;
   },
-): Promise<{ ok: false; reason: Reason | "lock_lost" }> {
+): Promise<IngestionFailure> {
   const failedDocument = await lifecycle.markFailed({
     stage: params.stage,
     error: params.error,

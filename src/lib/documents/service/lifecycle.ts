@@ -238,6 +238,29 @@ export async function markDocumentReady(params: {
   return document ? toDocumentView(document) : null;
 }
 
+export async function markDocumentPageCount(params: {
+  workspaceId: string;
+  documentId: ObjectId;
+  pageCount: number;
+  guard?: DocumentWriteGuard;
+}): Promise<DocumentView | null> {
+  const documents = await documentsCollection();
+  const document = await documents.findOneAndUpdate(
+    buildDocumentLifecycleFilter(params),
+    {
+      $set: {
+        pageCount: params.pageCount,
+        updatedAt: new Date(),
+      },
+    },
+    {
+      returnDocument: "after",
+    },
+  );
+
+  return document ? toDocumentView(document) : null;
+}
+
 export async function markDocumentCancelled(params: {
   workspaceId: string;
   documentId: ObjectId;
@@ -304,6 +327,14 @@ export function createLockedDocumentLifecycle(params: {
       pageCount: number;
     }): Promise<DocumentView | null> {
       return markDocumentReady({
+        ...target,
+        ...input,
+      });
+    },
+    markPageCount(input: {
+      pageCount: number;
+    }): Promise<DocumentView | null> {
+      return markDocumentPageCount({
         ...target,
         ...input,
       });

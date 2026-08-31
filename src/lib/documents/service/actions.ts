@@ -23,7 +23,7 @@ export function getDocumentNextAction(document: Document): DocumentNextAction {
     return { type: "wait" };
   }
 
-  if (document.status === "failed") {
+  if (document.status === "failed" || document.status === "cancelled") {
     return document.blobPathname ? { type: "process" } : { type: "upload" };
   }
 

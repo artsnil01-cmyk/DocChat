@@ -11,8 +11,6 @@ export const RAG_STRATEGIES = {
   "page-parent-child-v1": {
     progress: {
       reading: 10,
-      normalizing: 30,
-      chunking: 50,
       embedding: 80,
       indexing: 95,
     },

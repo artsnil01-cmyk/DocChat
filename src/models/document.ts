@@ -9,8 +9,6 @@ export type DocumentStatus =
 
 export type DocumentStage =
   | "reading"
-  | "normalizing"
-  | "chunking"
   | "embedding"
   | "indexing";
 
