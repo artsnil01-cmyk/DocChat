@@ -22,3 +22,11 @@ export type DenseRetrievalCandidate = RetrievalCandidateBase & {
 export type LexicalRetrievalCandidate = RetrievalCandidateBase & {
   lexicalScore: number;
 };
+
+export type FusedRetrievalCandidate = RetrievalCandidateBase & {
+  denseScore?: number;
+  denseRank?: number;
+  lexicalScore?: number;
+  lexicalRank?: number;
+  fusedScore: number;
+};
