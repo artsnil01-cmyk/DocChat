@@ -59,5 +59,5 @@ Do not commit `VERCEL_BLOB_CALLBACK_URL`. It is local-only and should not be pus
 - `architecture/auth/`: sessions, cookies, workspace identity.
 - `architecture/data-model/`: MongoDB model and indexes.
 - `architecture/documents/`: upload, retry, processing.
-- `architecture/chat/`: chat persistence and streaming.
+- `architecture/chat/`: chat persistence and non-streaming answering.
 - `architecture/rag/`: ingestion and retrieval plans.

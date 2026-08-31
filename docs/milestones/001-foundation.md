@@ -31,6 +31,6 @@ Establish server configuration, persistence access, setup scripts, and reusable 
 ## Validation
 
 - [x] `npm run verify`
-- [ ] `npm run setup`
+- [x] `npm run setup`
 - [x] `npm run typecheck`
 - [x] `npm run lint`

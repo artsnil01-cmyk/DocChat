@@ -15,7 +15,7 @@ Validate software behavior and preserve RAG quality experiments.
 - [ ] Add upload lifecycle integration tests.
 - [ ] Add retrieval integration tests.
 - [ ] Add chat integration tests.
-- [ ] Add upload-chat-stream-sources E2E test.
+- [ ] Add upload-chat-answer-sources E2E test.
 - [ ] Add French evaluation dataset.
 - [ ] Add Arabic evaluation dataset.
 - [ ] Record retrieval evaluation results.

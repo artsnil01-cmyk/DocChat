@@ -21,6 +21,8 @@ Chats are workspace-scoped conversation records. A new chat is created only when
 - Selected documents are added to `Chat.documentIds` when the user sends a non-empty message.
 - Detaching a document from a chat does not delete it from the workspace library.
 - Per-query document restrictions do not mutate `Chat.documentIds`.
+- Draft selected documents are frontend-only until the message is sent.
+- One answer runs at a time; chat navigation is locked during answering.
 
 ## Answering Policy
 
@@ -32,3 +34,11 @@ Chats are workspace-scoped conversation records. A new chat is created only when
 | Existing `chatId`, no `documentIds` | Answer from stored `Chat.documentIds`. |
 
 Query enrichment runs only when the request uses stored `Chat.documentIds`.
+
+## Frontend Behavior
+
+- The composer clears submitted text and draft document chips when a send starts.
+- The composer restores the submitted draft only if the request fails.
+- Active chat documents render as read-only `@document` chips.
+- Persisted assistant sources are hydrated from chunk and document records when a chat is reopened.
+- Chat deletion removes the chat and messages; workspace documents remain.

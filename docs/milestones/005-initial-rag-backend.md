@@ -97,13 +97,15 @@ type DocumentStage =
 
 - [x] Persist user messages.
 - [x] Generate grounded OpenAI answers.
-- [ ] Add streaming after non-streaming answer path is correct.
+- [x] Keep current answer path non-streaming.
+- [ ] Add required streaming response path.
 - [x] Persist assistant messages.
 - [x] Persist source child chunk IDs and rerank scores.
+- [x] Hydrate persisted sources to document names, page ranges, and excerpts.
 
 ## Validation
 
-- [ ] Retrieval filters by workspace and selected documents.
-- [ ] Unsupported questions are refused.
-- [ ] Sources resolve to document names and page ranges.
-- [ ] Failed ingestion leaves no usable partial index.
+- [x] Retrieval filters by workspace and selected documents.
+- [x] Unsupported questions are refused.
+- [x] Sources resolve to document names and page ranges.
+- [x] Failed ingestion leaves no usable partial index.

@@ -30,9 +30,9 @@ Implement secure PDF upload, workspace-local deduplication, status tracking, and
 
 ## Validation
 
-- [ ] Duplicate upload avoids re-ingestion.
-- [ ] Same filename with different content creates a distinct document.
-- [ ] Same-name display names remain understandable.
+- [x] Duplicate upload avoids re-ingestion.
+- [x] Same filename with different content creates a distinct document.
+- [x] Same-name display names remain understandable.
 - [x] Global delete removes the workspace document from all chats.
 - [x] Processing retry maps upload-required, active-processing, and ready states.
 - [x] Status polling exposes public processing stages.

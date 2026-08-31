@@ -18,9 +18,9 @@ Implement backend chat CRUD and stable chat scope rules before document upload a
 ## Validation
 
 - [x] Chat CRUD routes require authentication.
-- [ ] Empty chat UI does not create unused chat records.
-- [ ] First meaningful chat action creates the chat record.
-- [ ] Chats are isolated by workspace.
+- [x] Empty chat UI does not create unused chat records.
+- [x] First meaningful chat action creates the chat record.
+- [x] Chats are isolated by workspace.
 - [x] Deleted chats are unavailable from the workspace.
-- [ ] Messages load in chronological order.
-- [ ] Per-query document scope does not overwrite `Chat.documentIds`.
+- [x] Messages load in chronological order.
+- [x] Per-query document scope does not overwrite `Chat.documentIds`.

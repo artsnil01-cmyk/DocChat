@@ -16,9 +16,9 @@ The production path is `page-parent-child-v1`. It extracts native PDF text by pa
 
 ## LangChain Boundary
 
-LangChain may be used for integration plumbing: chunk document shape, Cohere embeddings, Cohere reranking, and small structured-output helpers.
+LangChain may be used only as integration plumbing where it adds value.
 
-The RAG architecture stays custom. PDF text extraction, chunking, MongoDB retrieval, RRF, parent expansion, context budgeting, authorization, and final streaming depend on explicit project behavior.
+The RAG architecture stays custom. PDF text extraction, chunking, MongoDB retrieval, RRF, parent expansion, context budgeting, authorization, and answer generation depend on explicit project behavior.
 
 ## Ingestion Contract
 
