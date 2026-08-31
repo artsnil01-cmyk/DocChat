@@ -66,10 +66,10 @@ type DocumentStage =
 
 ## Search Indexes
 
-- [ ] Create MongoDB Atlas vector index for 1024D cosine search.
-- [ ] Filter vector search by document, kind, and strategy.
-- [ ] Create MongoDB Atlas lexical Search index for `text` and `sectionPath`.
-- [ ] Configure standard, French, and Arabic analyzers.
+- [x] Create MongoDB Atlas vector index for 1024D cosine search.
+- [x] Filter vector search by document, kind, and strategy.
+- [x] Create MongoDB Atlas lexical Search index for `text`.
+- [x] Configure standard, French, and Arabic analyzers.
 
 ## Retrieval And Reranking
 

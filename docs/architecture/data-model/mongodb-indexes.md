@@ -1,6 +1,6 @@
 # MongoDB Indexes
 
-This is the index plan implemented by `scripts/create-indexes.ts`.
+Base indexes are implemented by `scripts/create-indexes.ts`. Retrieval indexes are implemented by `scripts/create-search-indexes.ts` and included in `npm run setup`.
 
 ## Collection Indexes
 
@@ -19,7 +19,5 @@ This is the index plan implemented by `scripts/create-indexes.ts`.
 
 | Collection | Index | Purpose |
 | --- | --- | --- |
-| `chunks` | Vector index on `embedding`, with filters on `documentId`, `strategyVersion`, and `kind` | Dense retrieval over child chunks within the selected document scope. |
-| `chunks` | Search index on `text` with French and Arabic analyzer paths | Lexical retrieval for French, Arabic, and mixed-language queries. |
-
-Atlas retrieval indexes may be provisioned separately from ordinary collection indexes if the project environment makes scripted creation unreliable.
+| `chunks` | `chunks_vector_embedding`: vector on `embedding`, filters on `documentId`, `strategyVersion`, `kind` | Dense retrieval over child chunks within the selected document scope. |
+| `chunks` | `chunks_text_search`: `text` with standard, French, Arabic analyzers | Lexical retrieval for French, Arabic, and mixed-language queries. |

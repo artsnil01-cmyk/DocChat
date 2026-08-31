@@ -25,7 +25,7 @@ npm run verify
 npm run setup
 ```
 
-`npm run setup` creates database indexes and seeds the shared account.
+`npm run setup` creates base MongoDB indexes, creates Atlas Search indexes, verifies Blob access, and seeds the shared account.
 
 ## Local Blob Callbacks
 
