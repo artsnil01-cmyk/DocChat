@@ -18,16 +18,16 @@ Implement the production `page-parent-child-v1` ingestion and retrieval pipeline
 
 - [x] Keep Blob completion callback fast.
 - [x] Trigger ingestion after Blob completion.
-- [ ] Keep user-visible stages traceable.
-- [ ] Add cancellation checkpoints between processing stages.
+- [x] Keep user-visible durable stages traceable.
+- [x] Add cancellation checkpoints between durable processing stages.
+- [x] Resume ingestion from the stored durable stage.
+- [x] Refactor ingestion execution into standardized stage runners.
 
 Current public stages:
 
 ```ts
 type DocumentStage =
   | "reading"
-  | "normalizing"
-  | "chunking"
   | "embedding"
   | "indexing";
 ```

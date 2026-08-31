@@ -26,5 +26,6 @@ flowchart TD
 - `pending_upload` retries through the upload preflight route.
 - `failed` with Blob data retries through the process route.
 - `cancelled` with Blob data retries through the process route.
+- `process` resumes from the stored durable document stage.
 - `processing` returns `already_processing` while the active lock is valid.
 - `ready` returns `ready`.

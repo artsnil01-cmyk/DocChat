@@ -48,7 +48,7 @@ Rules: one login creates one session, several sessions may share a workspace, ra
 - `sizeBytes: number`
 - `pageCount?: number`
 - `status: "pending_upload" | "processing" | "ready" | "failed" | "cancelled"`
-- `stage?: "reading" | "normalizing" | "chunking" | "embedding" | "indexing"`
+- `stage?: "reading" | "embedding" | "indexing"`
 - `progress?: number`
 - `error?: { code: string; message: string }`
 - `processingLock?: { token: string; expiresAt: Date }`
@@ -56,7 +56,7 @@ Rules: one login creates one session, several sessions may share a workspace, ra
 - `createdAt: Date`
 - `updatedAt: Date`
 
-Rules: workspace-scoped storage, `(workspaceId, contentHash)` deduplication, stable Blob pathname, short-lived processing lock, soft cancellation between processing stages.
+Rules: workspace-scoped storage, `(workspaceId, contentHash)` deduplication, stable Blob pathname, short-lived processing lock, soft cancellation between durable processing stages.
 
 ### `chunks`
 

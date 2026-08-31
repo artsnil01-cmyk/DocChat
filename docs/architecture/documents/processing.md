@@ -1,6 +1,6 @@
 # Document Processing
 
-Processing starts after Blob completion or through an explicit retry. The current implementation defines the contract and lock behavior; full RAG ingestion is implemented in Milestone 005.
+Processing starts after Blob completion or through an explicit retry. The ingestion runner resumes from the stored durable stage.
 
 ## Statuses
 
@@ -18,11 +18,11 @@ type DocumentStatus =
 ```ts
 type DocumentStage =
   | "reading"
-  | "normalizing"
-  | "chunking"
   | "embedding"
   | "indexing";
 ```
+
+`reading` covers Blob read, hash verification, PDF extraction, text normalization, chunk creation, and chunk persistence. `embedding` embeds child chunks. `indexing` finalizes readiness after indexed data is present.
 
 ## Lock
 
@@ -35,13 +35,13 @@ type DocumentProcessingLock = {
 };
 ```
 
-The lock is valid only for documents with Blob data and status `processing` or `failed`. Public callers use `processDocument()`; direct lock calls stay internal to the document service.
+The lock is valid only for documents with Blob data and status `processing`, `failed`, or `cancelled`. Public callers use `processDocument()`; direct lock calls stay internal to the document service.
 
 Progress values are strategy-owned UI anchors. They describe user-visible stage movement, not exact compute percentages.
 
 ## Cancellation
 
-Processing cancellation is soft. The cancel route sets `cancelRequestedAt`; the active stage finishes its current operation, then the pipeline checks the flag before starting the next stage.
+Processing cancellation is soft. The cancel route sets `cancelRequestedAt`; the active durable stage finishes, then the pipeline checks the flag before starting the next stage.
 
 If cancellation is requested:
 

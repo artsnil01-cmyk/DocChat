@@ -27,7 +27,7 @@ Implement secure PDF upload, workspace-local deduplication, chat attachment, sta
 - [x] Implement document status polling.
 - [x] Remove document reference from a chat without deleting workspace document data.
 - [x] Add explicit global document delete from workspace library.
-- [ ] Add soft processing cancellation contract.
+- [x] Add soft processing cancellation contract.
 
 ## Validation
 
@@ -37,4 +37,4 @@ Implement secure PDF upload, workspace-local deduplication, chat attachment, sta
 - [ ] Removing from one chat keeps documents used by another chat.
 - [x] Chat detach keeps workspace document data.
 - [x] Processing retry maps upload-required, active-processing, and ready states.
-- [ ] Status polling exposes public processing stages.
+- [x] Status polling exposes public processing stages.
