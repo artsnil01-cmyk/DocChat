@@ -7,6 +7,7 @@ import { BrandLockup } from "@/components/brand/brand-lockup";
 import { Composer } from "@/components/chat/composer";
 import { ConversationEmptyState } from "@/components/chat/conversation-empty-state";
 import { DocumentPanelShell } from "@/components/documents/document-panel-shell";
+import { useDocumentLibrary } from "@/components/documents/use-document-library";
 
 import styles from "./app-shell.module.css";
 
@@ -23,6 +24,7 @@ export function AppShellClient() {
   const [isDocumentPanelOpen, setIsDocumentPanelOpen] = useState(false);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const documentLibrary = useDocumentLibrary();
 
   const hasOverlay = isMobileSidebarOpen || isDocumentPanelOpen;
   const overlayMode = isMobileSidebarOpen ? styles.overlaySidebarMode : styles.overlayDocumentsMode;
@@ -285,7 +287,9 @@ export function AppShellClient() {
             <span className={styles.documentsButtonCopy}>
               <strong>Documents</strong>
             </span>
-            <span className={styles.documentsCount}>0</span>
+            <span className={styles.documentsCount}>
+              {documentLibrary.documents.length}
+            </span>
           </button>
           <button
             className={styles.mobileDocumentButton}
@@ -317,6 +321,7 @@ export function AppShellClient() {
       <DocumentPanelShell
         isOpen={isDocumentPanelOpen}
         onClose={() => setIsDocumentPanelOpen(false)}
+        library={documentLibrary}
       />
     </main>
   );
