@@ -1,72 +1,29 @@
-import { ObjectId } from "mongodb";
 import { NextRequest, NextResponse } from "next/server";
 
-import { authenticationErrorResponse } from "@/lib/api/errors";
-import { requireAuthenticatedWorkspace } from "@/lib/auth/guards";
+import { readJson, requireApiWorkspace } from "@/lib/api/request";
+import { uploadPreflightRequestSchema } from "@/lib/documents/schemas";
 import {
-  listDocumentsQuerySchema,
-  uploadPreflightRequestSchema,
-} from "@/lib/documents/schemas";
-import {
-  listChatDocuments,
   listWorkspaceDocuments,
   preflightDocumentUpload,
 } from "@/lib/documents/service";
 
-export async function GET(request: NextRequest) {
-  let workspaceId: string;
+export async function GET() {
+  const workspace = await requireApiWorkspace();
 
-  try {
-    ({ workspaceId } = await requireAuthenticatedWorkspace());
-  } catch (error) {
-    const response = authenticationErrorResponse(error);
-
-    if (response) {
-      return response;
-    }
-
-    throw error;
+  if (!workspace.ok) {
+    return workspace.response;
   }
 
-  const parsedQuery = listDocumentsQuerySchema.safeParse({
-    chatId: request.nextUrl.searchParams.get("chatId") ?? undefined,
+  return NextResponse.json({
+    documents: await listWorkspaceDocuments(workspace.value.workspaceId),
   });
-
-  if (!parsedQuery.success) {
-    return NextResponse.json({ error: "Invalid document query." }, { status: 400 });
-  }
-
-  if (!parsedQuery.data.chatId) {
-    return NextResponse.json({
-      documents: await listWorkspaceDocuments(workspaceId),
-    });
-  }
-
-  const documents = await listChatDocuments({
-    workspaceId,
-    chatId: new ObjectId(parsedQuery.data.chatId),
-  });
-
-  if (!documents) {
-    return NextResponse.json({ error: "Chat not found." }, { status: 404 });
-  }
-
-  return NextResponse.json({ documents });
 }
 
 export async function POST(request: NextRequest) {
-  let workspaceId: string;
+  const workspace = await requireApiWorkspace();
 
-  try {
-    ({ workspaceId } = await requireAuthenticatedWorkspace());
-  } catch (error) {
-    const response = authenticationErrorResponse(error);
-
-    if (response) {
-      return response;
-    }
-
-    throw error;
+  if (!workspace.ok) {
+    return workspace.response;
   }
 
   const body = await readJson(request);
@@ -77,7 +34,7 @@ export async function POST(request: NextRequest) {
   }
 
   const result = await preflightDocumentUpload({
-    workspaceId,
+    workspaceId: workspace.value.workspaceId,
     name: parsedBody.data.name,
     contentHash: parsedBody.data.contentHash,
     sizeBytes: parsedBody.data.sizeBytes,
@@ -92,12 +49,4 @@ export async function POST(request: NextRequest) {
     },
     { status: result.duplicate ? 200 : 201 },
   );
-}
-
-async function readJson(request: NextRequest): Promise<unknown> {
-  try {
-    return await request.json();
-  } catch {
-    return null;
-  }
 }

@@ -1,8 +1,6 @@
-import { ObjectId } from "mongodb";
 import { NextResponse } from "next/server";
 
-import { authenticationErrorResponse } from "@/lib/api/errors";
-import { requireAuthenticatedWorkspace } from "@/lib/auth/guards";
+import { parseObjectIdParam, requireApiWorkspace } from "@/lib/api/request";
 import { documentRouteParamsSchema } from "@/lib/documents/schemas";
 import { requestDocumentProcessingCancel } from "@/lib/documents/service";
 
@@ -16,33 +14,27 @@ export async function POST(
   _request: Request,
   context: CancelDocumentProcessingRouteContext,
 ) {
-  let workspaceId: string;
+  const workspace = await requireApiWorkspace();
 
-  try {
-    ({ workspaceId } = await requireAuthenticatedWorkspace());
-  } catch (error) {
-    const response = authenticationErrorResponse(error);
-
-    if (response) {
-      return response;
-    }
-
-    throw error;
+  if (!workspace.ok) {
+    return workspace.response;
   }
 
   const params = await context.params;
-  const parsedParams = documentRouteParamsSchema.safeParse(params);
+  const documentId = parseObjectIdParam(
+    params,
+    documentRouteParamsSchema,
+    "documentId",
+    "Invalid document route params.",
+  );
 
-  if (!parsedParams.success) {
-    return NextResponse.json(
-      { error: "Invalid document route params." },
-      { status: 400 },
-    );
+  if (!documentId.ok) {
+    return documentId.response;
   }
 
   const result = await requestDocumentProcessingCancel({
-    workspaceId,
-    documentId: new ObjectId(parsedParams.data.documentId),
+    workspaceId: workspace.value.workspaceId,
+    documentId: documentId.value,
   });
 
   if (!result.ok) {

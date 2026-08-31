@@ -32,14 +32,6 @@ export const documentRouteParamsSchema = z.object({
   documentId: objectIdStringSchema,
 });
 
-export const listDocumentsQuerySchema = z.object({
-  chatId: objectIdStringSchema.optional(),
-});
-
-export const detachDocumentQuerySchema = z.object({
-  chatId: objectIdStringSchema,
-});
-
 export type UploadPreflightRequest = z.infer<
   typeof uploadPreflightRequestSchema
 >;
@@ -48,5 +40,3 @@ export type BlobUploadClientPayload = z.infer<
 >;
 export type BlobUploadTokenPayload = z.infer<typeof blobUploadTokenPayloadSchema>;
 export type DocumentRouteParams = z.infer<typeof documentRouteParamsSchema>;
-export type ListDocumentsQuery = z.infer<typeof listDocumentsQuerySchema>;
-export type DetachDocumentQuery = z.infer<typeof detachDocumentQuerySchema>;

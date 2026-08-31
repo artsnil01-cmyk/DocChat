@@ -3,8 +3,7 @@ import { ObjectId } from "mongodb";
 import { after, NextRequest, NextResponse } from "next/server";
 
 import { documentConfig } from "@/config/documents";
-import { authenticationErrorResponse } from "@/lib/api/errors";
-import { requireAuthenticatedWorkspace } from "@/lib/auth/guards";
+import { readJson, requireApiWorkspace } from "@/lib/api/request";
 import {
   blobUploadClientPayloadSchema,
   blobUploadTokenPayloadSchema,
@@ -31,18 +30,10 @@ export async function POST(request: NextRequest) {
     body,
     token: serverEnv.blobReadWriteToken,
     onBeforeGenerateToken: async (pathname, clientPayload) => {
-      let workspaceId: string;
+      const workspace = await requireApiWorkspace();
 
-      try {
-        ({ workspaceId } = await requireAuthenticatedWorkspace());
-      } catch (error) {
-        const response = authenticationErrorResponse(error);
-
-        if (response) {
-          throw new Error("Unauthenticated upload token request.");
-        }
-
-        throw error;
+      if (!workspace.ok) {
+        throw new Error("Unauthenticated upload token request.");
       }
 
       const parsedPayload = blobUploadClientPayloadSchema.safeParse(
@@ -54,7 +45,7 @@ export async function POST(request: NextRequest) {
       }
 
       const result = await authorizeDocumentBlobUpload({
-        workspaceId,
+        workspaceId: workspace.value.workspaceId,
         documentId: new ObjectId(parsedPayload.data.documentId),
         pathname,
       });
@@ -134,14 +125,6 @@ function parseClientPayload(payload: string | null): unknown {
 
   try {
     return JSON.parse(payload);
-  } catch {
-    return null;
-  }
-}
-
-async function readJson(request: NextRequest): Promise<unknown> {
-  try {
-    return await request.json();
   } catch {
     return null;
   }

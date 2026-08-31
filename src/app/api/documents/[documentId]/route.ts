@@ -1,16 +1,8 @@
-import { ObjectId } from "mongodb";
 import { NextResponse } from "next/server";
 
-import { requireAuthenticatedWorkspace } from "@/lib/auth/guards";
-import { authenticationErrorResponse } from "@/lib/api/errors";
-import {
-  detachDocumentQuerySchema,
-  documentRouteParamsSchema,
-} from "@/lib/documents/schemas";
-import {
-  deleteWorkspaceDocument,
-  removeDocumentFromChat,
-} from "@/lib/documents/service";
+import { parseObjectIdParam, requireApiWorkspace } from "@/lib/api/request";
+import { documentRouteParamsSchema } from "@/lib/documents/schemas";
+import { deleteWorkspaceDocument } from "@/lib/documents/service";
 
 type DocumentRouteContext = {
   params: Promise<{
@@ -18,81 +10,43 @@ type DocumentRouteContext = {
   }>;
 };
 
-export async function DELETE(request: Request, context: DocumentRouteContext) {
-  let workspaceId: string;
+export async function DELETE(_request: Request, context: DocumentRouteContext) {
+  const workspace = await requireApiWorkspace();
 
-  try {
-    ({ workspaceId } = await requireAuthenticatedWorkspace());
-  } catch (error) {
-    const response = authenticationErrorResponse(error);
-
-    if (response) {
-      return response;
-    }
-
-    throw error;
+  if (!workspace.ok) {
+    return workspace.response;
   }
 
   const params = await context.params;
-  const parsedParams = documentRouteParamsSchema.safeParse(params);
-  const chatId = new URL(request.url).searchParams.get("chatId");
+  const documentId = parseObjectIdParam(
+    params,
+    documentRouteParamsSchema,
+    "documentId",
+    "Invalid document route params.",
+  );
 
-  if (!parsedParams.success) {
-    return NextResponse.json(
-      { error: "Invalid document route params." },
-      { status: 400 },
-    );
+  if (!documentId.ok) {
+    return documentId.response;
   }
 
-  if (!chatId) {
-    const result = await deleteWorkspaceDocument({
-      workspaceId,
-      documentId: new ObjectId(parsedParams.data.documentId),
-    });
-
-    if (result === "not_found") {
-      return NextResponse.json({ error: "Document not found." }, { status: 404 });
-    }
-
-    if (result === "processing") {
-      return NextResponse.json(
-        { error: "Document is currently processing." },
-        { status: 409 },
-      );
-    }
-
-    return NextResponse.json({
-      ok: true,
-      deleted: true,
-    });
-  }
-
-  const parsedQuery = detachDocumentQuerySchema.safeParse({
-    chatId,
-  });
-
-  if (!parsedQuery.success) {
-    return NextResponse.json(
-      { error: "Invalid document detach request." },
-      { status: 400 },
-    );
-  }
-
-  const result = await removeDocumentFromChat({
-    workspaceId,
-    chatId: new ObjectId(parsedQuery.data.chatId),
-    documentId: new ObjectId(parsedParams.data.documentId),
+  const result = await deleteWorkspaceDocument({
+    workspaceId: workspace.value.workspaceId,
+    documentId: documentId.value,
   });
 
   if (result === "not_found") {
+    return NextResponse.json({ error: "Document not found." }, { status: 404 });
+  }
+
+  if (result === "processing") {
     return NextResponse.json(
-      { error: "Chat document attachment not found." },
-      { status: 404 },
+      { error: "Document is currently processing." },
+      { status: 409 },
     );
   }
 
   return NextResponse.json({
     ok: true,
-    detached: true,
+    deleted: true,
   });
 }

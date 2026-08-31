@@ -2,7 +2,7 @@ import "server-only";
 
 import type { ObjectId } from "mongodb";
 
-import { chatsCollection, documentsCollection } from "@/lib/db/collections";
+import { documentsCollection } from "@/lib/db/collections";
 import { toDocumentView, type DocumentView } from "@/lib/documents/service/views";
 import type { Document } from "@/models/document";
 
@@ -16,41 +16,6 @@ export async function listWorkspaceDocuments(
     .toArray();
 
   return workspaceDocuments.map(toDocumentView);
-}
-
-export async function listChatDocuments(params: {
-  workspaceId: string;
-  chatId: ObjectId;
-}): Promise<DocumentView[] | null> {
-  const chats = await chatsCollection();
-  const chat = await chats.findOne({
-    _id: params.chatId,
-    workspaceId: params.workspaceId,
-  });
-
-  if (!chat) {
-    return null;
-  }
-
-  if (chat.documentIds.length === 0) {
-    return [];
-  }
-
-  const documents = await documentsCollection();
-  const chatDocuments = await documents
-    .find({
-      _id: { $in: chat.documentIds },
-      workspaceId: params.workspaceId,
-    })
-    .toArray();
-  const documentById = new Map(
-    chatDocuments.map((document) => [document._id.toHexString(), document]),
-  );
-
-  return chat.documentIds
-    .map((documentId) => documentById.get(documentId.toHexString()))
-    .filter((document): document is Document => Boolean(document))
-    .map(toDocumentView);
 }
 
 export async function getWorkspaceDocument(params: {
