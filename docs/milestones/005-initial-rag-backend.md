@@ -73,25 +73,25 @@ type DocumentStage =
 
 ## Retrieval Scope And Guards
 
-- [ ] Add chat/question retrieval request schema.
-- [ ] Load chat by workspace.
-- [ ] Resolve document scope from explicit `documentIds` or `Chat.documentIds`.
-- [ ] Validate selected documents belong to workspace.
-- [ ] Require selected documents to be `ready`.
-- [ ] Reject empty document scope.
-- [ ] Keep per-query document scope from mutating `Chat.documentIds`.
+- [x] Add chat/question retrieval request schema.
+- [x] Load chat by workspace.
+- [x] Resolve document scope from explicit `documentIds` or `Chat.documentIds`.
+- [x] Validate selected documents belong to workspace.
+- [x] Require selected documents to be `ready`.
+- [x] Reject empty document scope.
+- [x] Keep per-query document scope from mutating `Chat.documentIds`.
 
 ## Retrieval And Reranking
 
 - [ ] Load bounded recent chat history.
-- [ ] Contextualize dependent follow-up queries.
-- [ ] Embed retrieval query with Cohere `search_query`.
-- [ ] Run dense retrieval.
-- [ ] Run French/Arabic lexical retrieval.
-- [ ] Fuse and deduplicate candidates with RRF.
-- [ ] Rerank with Cohere.
-- [ ] Expand parent context.
-- [ ] Enforce evidence context budget.
+- [x] Contextualize dependent follow-up queries.
+- [x] Embed retrieval query with Cohere `search_query`.
+- [x] Run dense retrieval.
+- [x] Run French/Arabic lexical retrieval.
+- [x] Fuse and deduplicate candidates with RRF.
+- [x] Rerank with Cohere.
+- [x] Expand parent context.
+- [x] Enforce evidence context budget.
 
 ## Chat Answering
 
