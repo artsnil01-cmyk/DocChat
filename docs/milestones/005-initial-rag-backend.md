@@ -83,7 +83,7 @@ type DocumentStage =
 
 ## Retrieval And Reranking
 
-- [ ] Load bounded recent chat history.
+- [x] Load bounded recent chat history.
 - [x] Contextualize dependent follow-up queries.
 - [x] Embed retrieval query with Cohere `search_query`.
 - [x] Run dense retrieval.
@@ -95,11 +95,11 @@ type DocumentStage =
 
 ## Chat Answering
 
-- [ ] Persist user messages.
-- [ ] Generate grounded OpenAI answers.
+- [x] Persist user messages.
+- [x] Generate grounded OpenAI answers.
 - [ ] Add streaming after non-streaming answer path is correct.
-- [ ] Persist assistant messages.
-- [ ] Persist source child chunk IDs and rerank scores.
+- [x] Persist assistant messages.
+- [x] Persist source child chunk IDs and rerank scores.
 
 ## Validation
 
