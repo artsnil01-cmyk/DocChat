@@ -14,6 +14,6 @@ No global single-request state should control all active chats.
 
 `Chat.documentIds` is the persistent/default document scope of a conversation. It references workspace documents attached to the chat, not the documents used by the latest query.
 
-Selected documents are attached to `Chat.documentIds` when the user sends a non-empty message. Retrieval uses the full stored chat document scope.
+Selected documents are attached to `Chat.documentIds` when the user sends a non-empty message. That request answers from the selected documents only.
 
-If the request omits `documentIds`, retrieval falls back to `Chat.documentIds`.
+If an existing-chat request omits `documentIds`, retrieval falls back to `Chat.documentIds` and may contextualize the question with recent history.
