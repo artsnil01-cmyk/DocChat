@@ -4,6 +4,7 @@ import { MongoClient } from "mongodb";
 
 import { seedSharedAccount } from "../src/lib/auth/seed";
 import { createMongoIndexes } from "../src/lib/db/indexes";
+import { createAtlasSearchIndexes } from "../src/lib/db/search-indexes";
 import { readServerEnv } from "../src/lib/env/schema";
 
 const require = createRequire(import.meta.url);
@@ -25,6 +26,13 @@ try {
 
   await createMongoIndexes(database);
   console.log("MongoDB base indexes are ready.");
+
+  const createdSearchIndexNames = await createAtlasSearchIndexes(database);
+  console.log(
+    createdSearchIndexNames.length > 0
+      ? `Atlas Search indexes created: ${createdSearchIndexNames.join(", ")}`
+      : "Atlas Search indexes are ready.",
+  );
 
   await list({
     limit: 1,

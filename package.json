@@ -15,6 +15,7 @@
     "setup": "tsx scripts/setup.ts",
     "db:seed": "tsx scripts/seed.ts",
     "db:indexes": "tsx scripts/create-indexes.ts",
+    "db:search-indexes": "tsx scripts/create-search-indexes.ts",
     "verify": "tsx scripts/verify-env.ts"
   },
   "dependencies": {
