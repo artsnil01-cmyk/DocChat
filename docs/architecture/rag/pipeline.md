@@ -26,7 +26,7 @@ Blob completion schedules ingestion with Next.js `after()` so the upload callbac
 
 The ingestion runner updates `Document.status`, `stage`, and `progress` through document lifecycle helpers. It releases the processing lock when the run finishes or fails.
 
-The first skeleton marks ingestion as failed with `rag_ingestion_not_implemented` until PDF extraction is added.
+The ingestion runner reads the private Blob, verifies SHA-256, extracts page text, normalizes it, creates parent/child chunks, embeds child chunks, and marks the document ready after successful persistence.
 
 ## Strategy
 

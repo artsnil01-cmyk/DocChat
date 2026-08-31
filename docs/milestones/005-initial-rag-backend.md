@@ -56,13 +56,13 @@ type DocumentStage =
 
 ## Embedding And Persistence
 
-- [ ] Add token budgeting dependency.
-- [ ] Add LangChain only when wiring embeddings or reranking.
-- [ ] Embed child chunks with Cohere `search_document`.
-- [ ] Batch child embeddings.
+- [x] Add token budgeting dependency.
+- [x] Add LangChain only when wiring embeddings or reranking.
+- [x] Embed child chunks with Cohere `search_document`.
+- [x] Batch child embeddings.
 - [x] Delete stale chunks before retry.
 - [x] Insert complete parent/child chunk set.
-- [ ] Mark document `ready` only after successful persistence.
+- [x] Mark document `ready` only after successful persistence.
 
 ## Search Indexes
 
