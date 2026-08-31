@@ -5,7 +5,7 @@ import type { ObjectId } from "mongodb";
 import type { RagStrategy } from "@/config/rag";
 import { listParentChunksByIds } from "@/lib/rag/retrieval/chunks";
 import type { RetrievalScopeResult } from "@/lib/rag/retrieval/scope";
-import type { FusedRetrievalCandidate } from "@/lib/rag/retrieval/types";
+import type { RerankedRetrievalCandidate } from "@/lib/rag/retrieval/types";
 import type { Chunk } from "@/models/chunk";
 import type { Document } from "@/models/document";
 
@@ -24,6 +24,8 @@ export type AnswerEvidenceBlock = {
 
 export type AnswerEvidenceRelevance = {
   bestChildChunkId: string;
+  rerankScore: number;
+  rerankRank: number;
   fusedScore: number;
   denseScore?: number;
   denseRank?: number;
@@ -45,11 +47,13 @@ type ParentEvidenceCandidate = {
 
 export async function buildAnswerContext(params: {
   scope: Extract<RetrievalScopeResult, { ok: true }>;
-  fusedCandidates: FusedRetrievalCandidate[];
+  rerankedCandidates: RerankedRetrievalCandidate[];
   strategy: RagStrategy;
 }): Promise<AnswerContext> {
   const documentsById = indexDocumentsById(params.scope.documents);
-  const parentCandidates = selectParentEvidenceCandidates(params.fusedCandidates);
+  const parentCandidates = selectParentEvidenceCandidates(
+    params.rerankedCandidates,
+  );
   const parentChunks = await listParentChunksByIds({
     parentIds: parentCandidates.map((candidate) => candidate.parentId),
   });
@@ -104,18 +108,18 @@ function indexDocumentsById(documents: Document[]): Map<string, Document> {
 }
 
 function selectParentEvidenceCandidates(
-  fusedCandidates: FusedRetrievalCandidate[],
+  rerankedCandidates: RerankedRetrievalCandidate[],
 ): ParentEvidenceCandidate[] {
   const candidatesByParentId = new Map<string, ParentEvidenceCandidate>();
 
-  for (const candidate of fusedCandidates) {
+  for (const candidate of rerankedCandidates) {
     const parentId = candidate.parentId.toHexString();
     const existing = candidatesByParentId.get(parentId);
 
     if (existing) {
       existing.matchedChildChunkIds.push(candidate.chunkId.toHexString());
 
-      if (candidate.fusedScore > existing.relevance.fusedScore) {
+      if (candidate.rerankRank < existing.relevance.rerankRank) {
         existing.relevance = getEvidenceRelevance(candidate);
       }
 
@@ -131,7 +135,7 @@ function selectParentEvidenceCandidates(
   }
 
   return [...candidatesByParentId.values()].sort(
-    (left, right) => right.relevance.fusedScore - left.relevance.fusedScore,
+    (left, right) => left.relevance.rerankRank - right.relevance.rerankRank,
   );
 }
 
@@ -140,10 +144,12 @@ function indexParentChunksById(chunks: Chunk[]): Map<string, Chunk> {
 }
 
 function getEvidenceRelevance(
-  candidate: FusedRetrievalCandidate,
+  candidate: RerankedRetrievalCandidate,
 ): AnswerEvidenceRelevance {
   return {
     bestChildChunkId: candidate.chunkId.toHexString(),
+    rerankScore: candidate.rerankScore,
+    rerankRank: candidate.rerankRank,
     fusedScore: candidate.fusedScore,
     denseScore: candidate.denseScore,
     denseRank: candidate.denseRank,

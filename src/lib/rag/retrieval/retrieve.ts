@@ -2,6 +2,7 @@ import "server-only";
 
 import { getRagStrategy, type RagStrategy } from "@/config/rag";
 import { serverEnv } from "@/lib/env/server";
+import { rerankFusedCandidates } from "@/lib/rag/reranking";
 import { retrieveDenseCandidates } from "@/lib/rag/retrieval/dense";
 import { fuseRetrievalCandidates } from "@/lib/rag/retrieval/fusion";
 import { retrieveLexicalCandidates } from "@/lib/rag/retrieval/lexical";
@@ -10,6 +11,7 @@ import type {
   DenseRetrievalCandidate,
   FusedRetrievalCandidate,
   LexicalRetrievalCandidate,
+  RerankedRetrievalCandidate,
 } from "@/lib/rag/retrieval/types";
 
 export type RetrieveDocumentEvidenceResult = {
@@ -17,6 +19,7 @@ export type RetrieveDocumentEvidenceResult = {
   denseCandidates: DenseRetrievalCandidate[];
   lexicalCandidates: LexicalRetrievalCandidate[];
   fusedCandidates: FusedRetrievalCandidate[];
+  rerankedCandidates: RerankedRetrievalCandidate[];
 };
 
 export async function retrieveDocumentEvidence(params: {
@@ -38,14 +41,22 @@ export async function retrieveDocumentEvidence(params: {
     }),
   ]);
 
+  const fusedCandidates = fuseRetrievalCandidates({
+    denseCandidates,
+    lexicalCandidates,
+    strategy,
+  });
+  const rerankedCandidates = await rerankFusedCandidates({
+    query: params.retrievalQuery,
+    candidates: fusedCandidates,
+    strategy,
+  });
+
   return {
     retrievalQuery: params.retrievalQuery,
     denseCandidates,
     lexicalCandidates,
-    fusedCandidates: fuseRetrievalCandidates({
-      denseCandidates,
-      lexicalCandidates,
-      strategy,
-    }),
+    fusedCandidates,
+    rerankedCandidates,
   };
 }
