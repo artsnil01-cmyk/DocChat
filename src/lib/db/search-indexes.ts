@@ -41,20 +41,32 @@ export function getAtlasSearchIndexes(): SearchIndexDescription[] {
         mappings: {
           dynamic: false,
           fields: {
-            text: [
-              {
-                type: "string",
-                analyzer: "lucene.standard",
+            text: {
+              type: "string",
+              analyzer: "lucene.standard",
+              searchAnalyzer: "lucene.standard",
+              multi: {
+                french: {
+                  type: "string",
+                  analyzer: "lucene.french",
+                  searchAnalyzer: "lucene.french",
+                },
+                arabic: {
+                  type: "string",
+                  analyzer: "lucene.arabic",
+                  searchAnalyzer: "lucene.arabic",
+                },
               },
-              {
-                type: "string",
-                analyzer: "lucene.french",
-              },
-              {
-                type: "string",
-                analyzer: "lucene.arabic",
-              },
-            ],
+            },
+            documentId: {
+              type: "objectId",
+            },
+            strategyVersion: {
+              type: "token",
+            },
+            kind: {
+              type: "token",
+            },
           },
         },
       },
