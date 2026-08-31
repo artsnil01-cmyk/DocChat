@@ -1,14 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { BrandLockup } from "@/components/brand/brand-lockup";
+import {
+  canSendMessage,
+  getDocumentsByIds,
+  getMentionableDocuments,
+  getSelectedDocuments,
+  removeMissingDocumentIds,
+  toggleSelectedDocumentId,
+} from "@/components/chat/chat-ui-state";
+import { ChatContextDocuments } from "@/components/chat/chat-context-documents";
 import { Composer } from "@/components/chat/composer";
 import { ConversationEmptyState } from "@/components/chat/conversation-empty-state";
+import { ConversationThread } from "@/components/chat/conversation-thread";
+import { useChatLibrary } from "@/components/chat/use-chat-library";
 import { DocumentPanelShell } from "@/components/documents/document-panel-shell";
 import { useDocumentLibrary } from "@/components/documents/use-document-library";
 
+import { ChatSidebarList } from "./chat-sidebar-list";
 import styles from "./app-shell.module.css";
 
 const sidebarCollapsedStorageKey = "docchat-sidebar-collapsed";
@@ -24,11 +36,58 @@ export function AppShellClient() {
   const [isDocumentPanelOpen, setIsDocumentPanelOpen] = useState(false);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [composerText, setComposerText] = useState("");
+  const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
+  const [isMentionOpen, setIsMentionOpen] = useState(false);
+  const composerFileInputRef = useRef<HTMLInputElement>(null);
+  const composerInputRef = useRef<HTMLTextAreaElement>(null);
+  const conversationScrollRef = useRef<HTMLDivElement>(null);
   const documentLibrary = useDocumentLibrary();
+  const chatLibrary = useChatLibrary();
 
   const hasOverlay = isMobileSidebarOpen || isDocumentPanelOpen;
   const overlayMode = isMobileSidebarOpen ? styles.overlaySidebarMode : styles.overlayDocumentsMode;
   const isDarkTheme = theme === "green";
+  const validSelectedDocumentIds = useMemo(
+    () =>
+      removeMissingDocumentIds({
+        selectedDocumentIds,
+        documents: documentLibrary.documents,
+      }),
+    [documentLibrary.documents, selectedDocumentIds],
+  );
+  const isAnswering = chatLibrary.answering;
+  const selectedDocuments = useMemo(
+    () =>
+      getSelectedDocuments({
+        selectedDocumentIds: validSelectedDocumentIds,
+        documents: documentLibrary.documents,
+      }),
+    [documentLibrary.documents, validSelectedDocumentIds],
+  );
+  const mentionableDocuments = useMemo(
+    () => getMentionableDocuments(documentLibrary.documents),
+    [documentLibrary.documents],
+  );
+  const activeChatDocuments = useMemo(
+    () =>
+      getDocumentsByIds({
+        documentIds: chatLibrary.activeChat?.documentIds ?? [],
+        documents: documentLibrary.documents,
+      }),
+    [chatLibrary.activeChat?.documentIds, documentLibrary.documents],
+  );
+  const sendAvailability = useMemo(
+    () =>
+      canSendMessage({
+        activeChatId: chatLibrary.activeChatId,
+        isAnswering,
+        text: composerText,
+        selectedDocuments,
+      }),
+    [chatLibrary.activeChatId, composerText, isAnswering, selectedDocuments],
+  );
+  const activeMessages = chatLibrary.activeChat?.messages ?? [];
 
   useEffect(() => {
     const frameId = window.requestAnimationFrame(() => {
@@ -53,6 +112,7 @@ export function AppShellClient() {
       setIsMobileSidebarOpen(false);
       setIsDocumentPanelOpen(false);
       setIsAccountMenuOpen(false);
+      setIsMentionOpen(false);
     }
 
     window.addEventListener("keydown", closeOnEscape);
@@ -80,6 +140,7 @@ export function AppShellClient() {
     setIsMobileSidebarOpen(false);
     setIsDocumentPanelOpen(false);
     setIsAccountMenuOpen(false);
+    setIsMentionOpen(false);
   }
 
   function toggleSidebar() {
@@ -99,6 +160,85 @@ export function AppShellClient() {
     });
   }
 
+  function toggleDocumentSelection(documentId: string) {
+    setSelectedDocumentIds((currentIds) =>
+      toggleSelectedDocumentId(currentIds, documentId),
+    );
+  }
+
+  function removeSelectedDocument(documentId: string) {
+    setSelectedDocumentIds((currentIds) =>
+      currentIds.filter((currentId) => currentId !== documentId),
+    );
+  }
+
+  function handlePromptSelect(prompt: string) {
+    setComposerText(prompt);
+    setIsMentionOpen(false);
+    composerInputRef.current?.focus();
+  }
+
+  function startNewConversation() {
+    chatLibrary.startNewConversation();
+    setComposerText("");
+    setSelectedDocumentIds([]);
+    setIsMentionOpen(false);
+  }
+
+  function triggerComposerUpload() {
+    composerFileInputRef.current?.click();
+  }
+
+  async function handleComposerFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.currentTarget.files?.[0];
+    event.currentTarget.value = "";
+
+    if (!file) {
+      return;
+    }
+
+    await documentLibrary.uploadDocument({ file });
+  }
+
+  async function handleSubmitMessage() {
+    if (!sendAvailability.canSend) {
+      return;
+    }
+
+    setIsMentionOpen(false);
+    const submittedText = composerText;
+    const submittedDocumentIds = validSelectedDocumentIds;
+    setComposerText("");
+    setSelectedDocumentIds([]);
+
+    const sent = await chatLibrary.sendMessage({
+      question: submittedText,
+      documentIds: submittedDocumentIds.length
+        ? submittedDocumentIds
+        : undefined,
+    });
+
+    if (!sent) {
+      setComposerText(submittedText);
+      setSelectedDocumentIds(submittedDocumentIds);
+    }
+  }
+
+  useEffect(() => {
+    conversationScrollRef.current?.scrollTo({
+      top: conversationScrollRef.current.scrollHeight,
+      behavior: "smooth",
+    });
+  }, [activeMessages.length]);
+
+  useEffect(() => {
+    if (!chatLibrary.activeChatId) {
+      return;
+    }
+
+    composerInputRef.current?.focus();
+  }, [chatLibrary.activeChatId]);
+
   return (
     <main
       className={`${styles.appView} ${isSidebarCollapsed ? styles.sidebarCollapsed : ""}`}
@@ -111,6 +251,15 @@ export function AppShellClient() {
         aria-hidden={!hasOverlay}
         tabIndex={hasOverlay ? 0 : -1}
         onClick={closeOverlays}
+      />
+
+      <input
+        ref={composerFileInputRef}
+        className={styles.hiddenFileInput}
+        type="file"
+        accept=".pdf,application/pdf"
+        tabIndex={-1}
+        onChange={handleComposerFileChange}
       />
 
       <aside
@@ -142,7 +291,12 @@ export function AppShellClient() {
           </div>
 
           <div className={styles.sidebarSectionTitle}>VOTRE ESPACE</div>
-          <button className={styles.newChatButton} type="button" disabled>
+          <button
+            className={styles.newChatButton}
+            type="button"
+            disabled={isAnswering}
+            onClick={startNewConversation}
+          >
             <span className={styles.newChatIcon} aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none">
                 <path d="M12 5v14M5 12h14" stroke="currentColor" strokeLinecap="round" strokeWidth="1.7" />
@@ -153,9 +307,10 @@ export function AppShellClient() {
         </div>
 
         <div className={styles.sidebarScroll}>
-          <div className={styles.emptySidebarState}>
-            <span>Aucune conversation</span>
-          </div>
+          <ChatSidebarList
+            chatLibrary={chatLibrary}
+            isNavigationLocked={isAnswering}
+          />
         </div>
 
         <div className={styles.sidebarFooter}>
@@ -312,8 +467,37 @@ export function AppShellClient() {
         <div className={styles.workbench}>
           <section className={styles.threadSheet} aria-label="Conversation">
             <div className={styles.sheetPattern} aria-hidden="true" />
-            <ConversationEmptyState />
-            <Composer />
+            <ChatContextDocuments documents={activeChatDocuments} />
+            {activeMessages.length > 0 ? (
+              <ConversationThread
+                messages={activeMessages}
+                scrollRef={conversationScrollRef}
+              />
+            ) : (
+              <ConversationEmptyState
+                readyDocumentCount={documentLibrary.readyDocuments.length}
+                onOpenDocuments={() => setIsDocumentPanelOpen(true)}
+                onUploadDocument={triggerComposerUpload}
+                onSelectPrompt={handlePromptSelect}
+              />
+            )}
+            <Composer
+              value={composerText}
+              selectedDocuments={selectedDocuments}
+              mentionableDocuments={mentionableDocuments}
+              sendAvailability={sendAvailability}
+              isAnswering={isAnswering}
+              isMentionOpen={isMentionOpen}
+              error={chatLibrary.error}
+              inputRef={composerInputRef}
+              onValueChange={setComposerText}
+              onSubmit={handleSubmitMessage}
+              onUploadDocument={triggerComposerUpload}
+              onToggleMention={() => setIsMentionOpen((isOpen) => !isOpen)}
+              onCloseMention={() => setIsMentionOpen(false)}
+              onToggleDocument={toggleDocumentSelection}
+              onRemoveDocument={removeSelectedDocument}
+            />
           </section>
         </div>
       </section>
@@ -322,6 +506,8 @@ export function AppShellClient() {
         isOpen={isDocumentPanelOpen}
         onClose={() => setIsDocumentPanelOpen(false)}
         library={documentLibrary}
+        selectedDocumentIds={validSelectedDocumentIds}
+        onToggleDocumentSelection={toggleDocumentSelection}
       />
     </main>
   );

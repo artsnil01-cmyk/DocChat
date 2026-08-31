@@ -11,12 +11,16 @@ type DocumentPanelShellProps = {
   isOpen: boolean;
   onClose: () => void;
   library: DocumentLibrary;
+  selectedDocumentIds: string[];
+  onToggleDocumentSelection: (documentId: string) => void;
 };
 
 export function DocumentPanelShell({
   isOpen,
   onClose,
   library,
+  selectedDocumentIds,
+  onToggleDocumentSelection,
 }: DocumentPanelShellProps) {
   const documentCount = library.documents.length;
 
@@ -95,6 +99,8 @@ export function DocumentPanelShell({
               <DocumentRow
                 key={document.id}
                 document={document}
+                isSelected={selectedDocumentIds.includes(document.id)}
+                onToggleSelection={() => onToggleDocumentSelection(document.id)}
                 onProcess={() => library.processDocument(document.id)}
                 onCancel={() => library.cancelProcessing(document.id)}
                 onDelete={() => library.deleteDocument(document.id)}

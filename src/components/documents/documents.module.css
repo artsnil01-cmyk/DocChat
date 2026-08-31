@@ -245,6 +245,19 @@
   background: color-mix(in srgb, var(--paper-soft) 54%, transparent);
 }
 
+.documentRowSelectable {
+  cursor: pointer;
+}
+
+.documentRowSelected {
+  background: color-mix(in srgb, var(--accent-softer) 78%, transparent);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.documentRowSelected:hover {
+  background: color-mix(in srgb, var(--accent-softer) 92%, transparent);
+}
+
 .documentRowBusy {
   background: color-mix(in srgb, var(--paper-soft) 48%, transparent);
 }

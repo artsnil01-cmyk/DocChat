@@ -7,6 +7,8 @@ import styles from "./documents.module.css";
 
 type DocumentRowProps = {
   document: DocumentLibraryItem;
+  isSelected: boolean;
+  onToggleSelection: () => void;
   onProcess: () => void;
   onCancel: () => void;
   onDelete: () => void;
@@ -14,19 +16,25 @@ type DocumentRowProps = {
 
 export function DocumentRow({
   document,
+  isSelected,
+  onToggleSelection,
   onProcess,
   onCancel,
   onDelete,
 }: DocumentRowProps) {
   const statusView = getDocumentStatusView(document);
   const isBusy = Boolean(document.pendingAction);
+  const isSelectable = document.status === "ready";
 
   return (
     <article
       className={`${styles.documentRow} ${styles[statusView.rowClass]} ${
         isBusy ? styles.documentRowBusy : ""
+      } ${isSelected ? styles.documentRowSelected : ""} ${
+        isSelectable ? styles.documentRowSelectable : ""
       }`}
       aria-busy={isBusy}
+      onClick={isSelectable ? onToggleSelection : undefined}
     >
       <span className={styles.documentIcon} aria-hidden="true">
         <FileText aria-hidden="true" />
@@ -112,13 +120,21 @@ function DocumentActionButton({
       aria-label={button.ariaLabel}
       title={button.title}
       disabled={disabled}
-      onClick={
-        action === "process"
-          ? onProcess
-          : action === "cancel"
-            ? onCancel
-            : onDelete
-      }
+      onClick={(event) => {
+        event.stopPropagation();
+
+        if (action === "process") {
+          onProcess();
+          return;
+        }
+
+        if (action === "cancel") {
+          onCancel();
+          return;
+        }
+
+        onDelete();
+      }}
     >
       {document.pendingAction === action ? <ActionSpinner /> : button.icon}
     </button>

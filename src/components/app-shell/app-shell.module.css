@@ -36,6 +36,10 @@
   pointer-events: auto;
 }
 
+.hiddenFileInput {
+  display: none;
+}
+
 .overlaySidebarMode {
   backdrop-filter: blur(7px);
 }
@@ -190,6 +194,212 @@
   display: flex;
   align-items: center;
   font-size: 11px;
+}
+
+.chatList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sideLabel {
+  padding: 14px 7px 6px;
+  color: var(--subtle);
+  font-size: 8.5px;
+  font-weight: 760;
+  letter-spacing: 0.13em;
+}
+
+.chatRowWrap {
+  width: 100%;
+  min-height: 52px;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  position: relative;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease,
+    opacity 0.12s ease,
+    filter 0.12s ease;
+}
+
+.chatRowWrap:hover {
+  background: color-mix(in srgb, var(--paper) 58%, transparent);
+  color: var(--ink);
+}
+
+.chatRowActive {
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: var(--shadow-soft);
+}
+
+.chatRowActive::before {
+  content: "";
+  width: 2px;
+  position: absolute;
+  left: 0;
+  top: 10px;
+  bottom: 10px;
+  border-radius: 99px;
+  background: var(--accent);
+}
+
+.chatRowLocked:not(.chatRowActive) {
+  opacity: 0.48;
+  filter: blur(0.35px);
+}
+
+.chatRow {
+  min-width: 0;
+  min-height: 52px;
+  padding: 7px 4px 7px 7px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: 1;
+  cursor: pointer;
+  text-align: left;
+}
+
+.chatRow:disabled {
+  cursor: default;
+}
+
+.chatRowGlyph {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--paper-soft);
+  color: var(--muted);
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+}
+
+.chatRowActive .chatRowGlyph {
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+.chatRowGlyph svg {
+  width: 15px;
+  height: 15px;
+}
+
+.chatRowCopy {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.chatTitle {
+  overflow: hidden;
+  color: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chatRowMeta {
+  color: var(--subtle);
+  font-size: 9.4px;
+}
+
+.chatOptions {
+  width: 24px;
+  height: 24px;
+  margin-right: 5px;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--subtle);
+  display: grid;
+  place-items: center;
+  opacity: 0.58;
+  cursor: pointer;
+  transition:
+    opacity 0.12s ease,
+    background 0.12s ease,
+    color 0.12s ease;
+}
+
+.chatRowWrap:hover .chatOptions,
+.chatRowActive .chatOptions {
+  opacity: 1;
+}
+
+.chatOptions:disabled {
+  cursor: default;
+}
+
+.chatOptions svg {
+  width: 14px;
+  height: 14px;
+}
+
+.chatMenu {
+  width: 138px;
+  padding: 5px;
+  position: absolute;
+  right: 6px;
+  top: calc(100% - 5px);
+  z-index: 5;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+  box-shadow: var(--shadow-panel);
+}
+
+.chatMenuDelete {
+  width: 100%;
+  height: 33px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--danger);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 11.5px;
+  font-weight: 620;
+}
+
+.chatMenuDelete:hover {
+  background: var(--danger-soft);
+}
+
+.chatMenuDelete svg {
+  width: 14px;
+  height: 14px;
+}
+
+.chatRowSpinner {
+  width: 13px;
+  height: 13px;
+  border: 2px solid color-mix(in srgb, currentColor 24%, transparent);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: chat-row-spin 0.72s linear infinite;
+}
+
+@keyframes chat-row-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .sidebarFooter {
