@@ -17,6 +17,7 @@ import {
   buildPageAwareChunks,
   persistChunkDrafts,
 } from "@/lib/rag/chunking";
+import { embedDocumentChunks } from "@/lib/rag/embeddings";
 import { extractPdfText } from "@/lib/rag/extraction";
 import { normalizePdfText } from "@/lib/rag/normalization";
 import type { DocumentError, DocumentStage } from "@/models/document";
@@ -36,6 +37,7 @@ export type RunDocumentIngestionResult =
         | "pdf_normalization_failed"
         | "chunking_failed"
         | "chunk_persistence_failed"
+        | "embedding_failed"
         | "not_implemented"
         | "lock_lost";
     };
@@ -168,14 +170,41 @@ export async function runDocumentIngestion(params: {
       return { ok: false, reason: "lock_lost" };
     }
 
-    return failDocument(lifecycle, {
-      stage: "embedding",
-      reason: "not_implemented",
-      error: {
-        code: "rag_ingestion_not_implemented",
-        message: `Document ingestion is not implemented yet for ${serverEnv.ragStrategyVersion}.`,
-      },
+    try {
+      await embedDocumentChunks({
+        documentId: document._id,
+        strategyVersion: serverEnv.ragStrategyVersion,
+        strategy,
+      });
+    } catch {
+      return failDocument(lifecycle, {
+        stage: "embedding",
+        reason: "embedding_failed",
+        error: {
+          code: "embedding_failed",
+          message: "Document chunk embeddings could not be generated.",
+        },
+      });
+    }
+
+    const indexingDocument = await lifecycle.markProcessing({
+      stage: "indexing",
+      progress: strategy.progress.indexing,
     });
+
+    if (!indexingDocument) {
+      return { ok: false, reason: "lock_lost" };
+    }
+
+    const readyDocument = await lifecycle.markReady({
+      pageCount: extractionResult.document.pageCount,
+    });
+
+    if (!readyDocument) {
+      return { ok: false, reason: "lock_lost" };
+    }
+
+    return { ok: true };
   } finally {
     await releaseDocumentProcessingLock({
       workspaceId: params.workspaceId,

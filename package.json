@@ -18,6 +18,8 @@
     "verify": "tsx scripts/verify-env.ts"
   },
   "dependencies": {
+    "@langchain/cohere": "^1.1.0",
+    "@langchain/core": "^1.2.9",
     "@vercel/blob": "^2.8.0",
     "argon2": "^0.45.1",
     "cohere-ai": "^8.1.0",
