@@ -3,8 +3,16 @@ import "server-only";
 import { ObjectId } from "mongodb";
 
 import { chatConfig } from "@/config/chat";
-import { chatsCollection, messagesCollection } from "@/lib/db/collections";
+import {
+  chatsCollection,
+  chunksCollection,
+  documentsCollection,
+  messagesCollection,
+} from "@/lib/db/collections";
+import { serverEnv } from "@/lib/env/server";
 import type { Chat } from "@/models/chat";
+import type { Chunk } from "@/models/chunk";
+import type { Document } from "@/models/document";
 import type { Message } from "@/models/message";
 
 export type ChatSummary = {
@@ -25,7 +33,26 @@ export type ChatMessageView = {
     chunkId: string;
     relevanceScore: number;
   }[];
+  evidence?: ChatMessageEvidenceView[];
   createdAt: string;
+};
+
+export type ChatMessageEvidenceView = {
+  citationId: string;
+  parentChunkId: string;
+  matchedChildChunkIds: string[];
+  documentId: string;
+  documentName: string;
+  text: string;
+  pageStart: number;
+  pageEnd: number;
+  tokenCount: number;
+  relevance?: {
+    rerankScore?: number;
+    fusedScore?: number;
+    denseScore?: number;
+    lexicalScore?: number;
+  };
 };
 
 export type ChatDetail = ChatSummary & {
@@ -88,10 +115,17 @@ export async function getChatDetail(params: {
     .sort({ createdAt: -1 })
     .limit(chatConfig.recentMessageLimit)
     .toArray();
+  const orderedMessages = recentMessages.reverse();
+  const evidenceByMessageId = await hydrateMessageEvidence({
+    workspaceId: params.workspaceId,
+    messages: orderedMessages,
+  });
 
   return {
     ...toChatSummary(chat),
-    messages: recentMessages.reverse().map(toChatMessageView),
+    messages: orderedMessages.map((message) =>
+      toChatMessageView(message, evidenceByMessageId.get(message._id.toHexString())),
+    ),
   };
 }
 
@@ -197,7 +231,10 @@ export function toChatSummary(chat: Chat): ChatSummary {
   };
 }
 
-export function toChatMessageView(message: Message): ChatMessageView {
+export function toChatMessageView(
+  message: Message,
+  evidence?: ChatMessageEvidenceView[],
+): ChatMessageView {
   return {
     id: message._id.toHexString(),
     chatId: message.chatId.toHexString(),
@@ -208,8 +245,119 @@ export function toChatMessageView(message: Message): ChatMessageView {
       chunkId: source.chunkId.toHexString(),
       relevanceScore: source.relevanceScore,
     })),
+    evidence,
     createdAt: message.createdAt.toISOString(),
   };
+}
+
+async function hydrateMessageEvidence(params: {
+  workspaceId: string;
+  messages: Message[];
+}): Promise<Map<string, ChatMessageEvidenceView[]>> {
+  const messagesWithSources = params.messages.filter(
+    (message) => message.sources?.length,
+  );
+
+  if (messagesWithSources.length === 0) {
+    return new Map();
+  }
+
+  const sourceChunkIds = messagesWithSources.flatMap((message) =>
+    message.sources?.map((source) => source.chunkId) ?? [],
+  );
+  const sourceChunks = await listChunksByIds(sourceChunkIds);
+  const sourceChunksById = indexChunksById(sourceChunks);
+  const parentChunks = await listChunksByIds(
+    sourceChunks.map((chunk) => chunk.parentId ?? chunk._id),
+  );
+  const parentChunksById = indexChunksById(parentChunks);
+  const documentsById = await indexWorkspaceDocumentsById({
+    workspaceId: params.workspaceId,
+    documentIds: parentChunks.map((chunk) => chunk.documentId),
+  });
+  const evidenceByMessageId = new Map<string, ChatMessageEvidenceView[]>();
+
+  for (const message of messagesWithSources) {
+    const evidence: ChatMessageEvidenceView[] = [];
+
+    for (const source of message.sources ?? []) {
+      const sourceChunk = sourceChunksById.get(source.chunkId.toHexString());
+      const parentChunk = sourceChunk
+        ? parentChunksById.get((sourceChunk.parentId ?? sourceChunk._id).toHexString())
+        : undefined;
+      const document = parentChunk
+        ? documentsById.get(parentChunk.documentId.toHexString())
+        : undefined;
+
+      if (!sourceChunk || !parentChunk || !document) {
+        continue;
+      }
+
+      evidence.push({
+        citationId: `S${evidence.length + 1}`,
+        parentChunkId: parentChunk._id.toHexString(),
+        matchedChildChunkIds: [sourceChunk._id.toHexString()],
+        documentId: document._id.toHexString(),
+        documentName: document.name,
+        text: parentChunk.text,
+        pageStart: parentChunk.pageStart,
+        pageEnd: parentChunk.pageEnd,
+        tokenCount: parentChunk.tokenCount,
+        relevance: {
+          rerankScore: source.relevanceScore,
+        },
+      });
+    }
+
+    if (evidence.length > 0) {
+      evidenceByMessageId.set(message._id.toHexString(), evidence);
+    }
+  }
+
+  return evidenceByMessageId;
+}
+
+async function listChunksByIds(chunkIds: ObjectId[]): Promise<Chunk[]> {
+  if (chunkIds.length === 0) {
+    return [];
+  }
+
+  const chunks = await chunksCollection();
+  return chunks
+    .find({
+      _id: {
+        $in: uniqueObjectIds(chunkIds),
+      },
+      strategyVersion: serverEnv.ragStrategyVersion,
+    })
+    .toArray();
+}
+
+async function indexWorkspaceDocumentsById(params: {
+  workspaceId: string;
+  documentIds: ObjectId[];
+}): Promise<Map<string, Document>> {
+  if (params.documentIds.length === 0) {
+    return new Map();
+  }
+
+  const documents = await documentsCollection();
+  const workspaceDocuments = await documents
+    .find({
+      _id: {
+        $in: uniqueObjectIds(params.documentIds),
+      },
+      workspaceId: params.workspaceId,
+    })
+    .toArray();
+
+  return new Map(
+    workspaceDocuments.map((document) => [document._id.toHexString(), document]),
+  );
+}
+
+function indexChunksById(chunks: Chunk[]): Map<string, Chunk> {
+  return new Map(chunks.map((chunk) => [chunk._id.toHexString(), chunk]));
 }
 
 function uniqueObjectIds(documentIds: ObjectId[]): ObjectId[] {
