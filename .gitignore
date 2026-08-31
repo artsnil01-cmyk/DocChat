@@ -25,11 +25,6 @@ pnpm-debug.log*
 # Vercel
 .vercel/
 
-# local project notes
-Notes.md
-WORKING_PRACTICES.md
-html_design_files
-
 # system
 .DS_Store
 Thumbs.db
