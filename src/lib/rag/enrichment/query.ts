@@ -4,6 +4,7 @@ import OpenAI from "openai";
 import { zodTextFormat } from "openai/helpers/zod";
 
 import { aiModels } from "@/config/ai";
+import { getRagStrategy } from "@/config/rag";
 import {
   buildQueryEnrichmentInput,
   queryEnrichmentInstructions,
@@ -14,6 +15,7 @@ import type {
   QueryEnrichmentInput,
 } from "@/lib/rag/enrichment/types";
 import { serverEnv } from "@/lib/env/server";
+import { limitConversationHistory } from "@/lib/rag/history";
 
 const openai = new OpenAI({
   apiKey: serverEnv.openaiApiKey,
@@ -22,11 +24,21 @@ const openai = new OpenAI({
 export async function enrichRetrievalQuery(
   input: QueryEnrichmentInput,
 ): Promise<EnrichedRetrievalQuery> {
+  const strategy = getRagStrategy(serverEnv.ragStrategyVersion);
+  const boundedInput = {
+    ...input,
+    conversationHistory: limitConversationHistory({
+      history: input.conversationHistory,
+      maxCompleteTurns: strategy.context.maxCompleteTurns,
+      maxTokens: strategy.context.maxHistoryTokens,
+    }),
+  };
+
   try {
     const response = await openai.responses.parse({
       model: aiModels.openai.auxiliary,
       instructions: queryEnrichmentInstructions,
-      input: buildQueryEnrichmentInput(input),
+      input: buildQueryEnrichmentInput(boundedInput),
       text: {
         format: zodTextFormat(
           queryEnrichmentOutputSchema,
@@ -37,17 +49,17 @@ export async function enrichRetrievalQuery(
     const output = response.output_parsed;
 
     if (!output) {
-      return originalQuestionFallback(input.question);
+      return originalQuestionFallback(boundedInput.question);
     }
 
     return {
-      originalQuestion: input.question,
-      retrievalQuery: output.needsRewrite ? output.query : input.question,
+      originalQuestion: boundedInput.question,
+      retrievalQuery: output.needsRewrite ? output.query : boundedInput.question,
       needsRewrite: output.needsRewrite,
       fallbackUsed: false,
     };
   } catch {
-    return originalQuestionFallback(input.question);
+    return originalQuestionFallback(boundedInput.question);
   }
 }
 
