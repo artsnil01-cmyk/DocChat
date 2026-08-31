@@ -44,15 +44,15 @@ type DocumentStage =
 ## Page Text Preparation
 
 - [x] Normalize text conservatively.
-- [ ] Preserve page ranges during chunk assembly.
+- [x] Preserve page ranges during chunk assembly.
 - [ ] Keep extraction fallback-free: unsupported PDFs fail clearly.
 
 ## Structure And Chunking
 
-- [ ] Build page-aware parent chunks.
-- [ ] Build overlapping child chunks inside parents.
-- [ ] Preserve page ranges, offsets, and language.
-- [ ] Keep parent chunks unembedded.
+- [x] Build page-aware parent chunks.
+- [x] Build overlapping child chunks inside parents.
+- [x] Preserve page ranges, offsets, and language.
+- [x] Keep parent chunks unembedded.
 
 ## Embedding And Persistence
 
@@ -60,8 +60,8 @@ type DocumentStage =
 - [ ] Add LangChain only when wiring embeddings or reranking.
 - [ ] Embed child chunks with Cohere `search_document`.
 - [ ] Batch child embeddings.
-- [ ] Delete stale chunks before retry.
-- [ ] Insert complete parent/child chunk set.
+- [x] Delete stale chunks before retry.
+- [x] Insert complete parent/child chunk set.
 - [ ] Mark document `ready` only after successful persistence.
 
 ## Search Indexes
