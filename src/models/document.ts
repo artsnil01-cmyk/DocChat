@@ -34,6 +34,7 @@ export type Document = {
   stage?: DocumentStage;
   progress?: number;
   error?: DocumentError;
+  uploadExpiresAt?: Date;
   processingLock?: DocumentProcessingLock;
   cancelRequestedAt?: Date;
   createdAt: Date;

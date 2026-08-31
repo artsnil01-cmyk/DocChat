@@ -46,6 +46,7 @@ export async function GET(_request: Request, context: DocumentStatusRouteContext
       stage: document.stage,
       progress: document.progress,
       error: document.error,
+      uploadExpiresAt: document.uploadExpiresAt,
       nextAction: document.nextAction,
       updatedAt: document.updatedAt,
     },

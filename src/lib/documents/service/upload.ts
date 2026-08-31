@@ -2,12 +2,11 @@ import "server-only";
 
 import { ObjectId } from "mongodb";
 
+import { documentConfig } from "@/config/documents";
 import { documentsCollection } from "@/lib/db/collections";
 import { resolveWorkspaceDocumentName } from "@/lib/documents/service/naming";
-import {
-  findWorkspaceDocumentByContentHash,
-  getWorkspaceDocumentRecord,
-} from "@/lib/documents/service/queries";
+import { expirePendingUploadIfNeeded } from "@/lib/documents/service/pending-upload";
+import { findWorkspaceDocumentByContentHash } from "@/lib/documents/service/queries";
 import { toDocumentView, type DocumentView } from "@/lib/documents/service/views";
 import {
   buildDocumentBlobPathname,
@@ -77,7 +76,7 @@ export async function authorizeDocumentBlobUpload(params: {
   documentId: ObjectId;
   pathname: string;
 }): Promise<DocumentUploadAuthorizationResult> {
-  const document = await getWorkspaceDocumentRecord({
+  const document = await expirePendingUploadIfNeeded({
     documentId: params.documentId,
     workspaceId: params.workspaceId,
   });
@@ -151,6 +150,7 @@ async function createPendingDocument(params: {
     contentHash: params.contentHash,
     sizeBytes: params.sizeBytes,
     status: "pending_upload",
+    uploadExpiresAt: getPendingUploadExpiry(now),
     createdAt: now,
     updatedAt: now,
   };
@@ -175,6 +175,7 @@ async function resetFailedDocumentToPendingUpload(
     {
       $set: {
         status: "pending_upload",
+        uploadExpiresAt: getPendingUploadExpiry(new Date()),
         updatedAt: new Date(),
       },
       $unset: {
@@ -190,6 +191,10 @@ async function resetFailedDocumentToPendingUpload(
   );
 
   return result ?? document;
+}
+
+function getPendingUploadExpiry(now: Date): Date {
+  return new Date(now.getTime() + documentConfig.pendingUploadLifetimeMs);
 }
 
 function getUploadInstructions(documentId: ObjectId): DocumentUploadInstructions {

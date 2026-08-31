@@ -38,6 +38,7 @@ export type ClientDocument = {
   stage?: ClientDocumentStage;
   progress?: number;
   error?: ClientDocumentError;
+  uploadExpiresAt?: string;
   cancelRequestedAt?: string;
   nextAction: ClientDocumentNextAction;
   createdAt?: string;
@@ -75,6 +76,7 @@ export type DocumentStatusResponse = {
     | "stage"
     | "progress"
     | "error"
+    | "uploadExpiresAt"
     | "nextAction"
     | "updatedAt"
   >;

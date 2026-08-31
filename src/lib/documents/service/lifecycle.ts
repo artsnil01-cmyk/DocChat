@@ -4,9 +4,9 @@ import { ObjectId, type Filter } from "mongodb";
 
 import { documentsCollection } from "@/lib/db/collections";
 import { deletePendingUpload } from "@/lib/documents/service/cleanup";
+import { expirePendingUploadIfNeeded } from "@/lib/documents/service/pending-upload";
 import {
   findWorkspaceDocumentByContentHash,
-  getWorkspaceDocumentRecord,
 } from "@/lib/documents/service/queries";
 import { toDocumentView, type DocumentView } from "@/lib/documents/service/views";
 import {
@@ -52,7 +52,7 @@ export async function completeDocumentBlobUpload(params: {
   tokenPayload: DocumentUploadTokenPayload;
   blob: BlobMetadata;
 }): Promise<CompleteDocumentUploadResult> {
-  const document = await getWorkspaceDocumentRecord({
+  const document = await expirePendingUploadIfNeeded({
     documentId: new ObjectId(params.tokenPayload.documentId),
     workspaceId: params.tokenPayload.workspaceId,
   });
@@ -131,6 +131,9 @@ export async function completeDocumentBlobUpload(params: {
         progress: 0,
         updatedAt: now,
       },
+      $unset: {
+        uploadExpiresAt: "",
+      },
     },
     {
       returnDocument: "after",
@@ -167,6 +170,7 @@ export async function markDocumentProcessing(params: {
       },
       $unset: {
         error: "",
+        uploadExpiresAt: "",
       },
     },
     {
@@ -197,6 +201,7 @@ export async function markDocumentFailed(params: {
       $unset: {
         processingLock: "",
         cancelRequestedAt: "",
+        uploadExpiresAt: "",
       },
     },
     {
@@ -228,6 +233,7 @@ export async function markDocumentReady(params: {
         error: "",
         processingLock: "",
         cancelRequestedAt: "",
+        uploadExpiresAt: "",
       },
     },
     {
@@ -280,6 +286,7 @@ export async function markDocumentCancelled(params: {
         error: "",
         processingLock: "",
         cancelRequestedAt: "",
+        uploadExpiresAt: "",
       },
     },
     {

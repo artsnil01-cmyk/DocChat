@@ -16,6 +16,7 @@ export type DocumentView = {
   stage?: Document["stage"];
   progress?: number;
   error?: Document["error"];
+  uploadExpiresAt?: string;
   cancelRequestedAt?: string;
   nextAction: DocumentNextAction;
   createdAt: string;
@@ -35,6 +36,7 @@ export function toDocumentView(document: Document): DocumentView {
     stage: document.stage,
     progress: document.progress,
     error: document.error,
+    uploadExpiresAt: document.uploadExpiresAt?.toISOString(),
     cancelRequestedAt: document.cancelRequestedAt?.toISOString(),
     nextAction: getDocumentNextAction(document),
     createdAt: document.createdAt.toISOString(),

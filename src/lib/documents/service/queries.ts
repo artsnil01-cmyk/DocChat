@@ -3,12 +3,18 @@ import "server-only";
 import type { ObjectId } from "mongodb";
 
 import { documentsCollection } from "@/lib/db/collections";
+import {
+  expirePendingUploadIfNeeded,
+  expireWorkspacePendingUploads,
+} from "@/lib/documents/service/pending-upload";
 import { toDocumentView, type DocumentView } from "@/lib/documents/service/views";
 import type { Document } from "@/models/document";
 
 export async function listWorkspaceDocuments(
   workspaceId: string,
 ): Promise<DocumentView[]> {
+  await expireWorkspacePendingUploads(workspaceId);
+
   const documents = await documentsCollection();
   const workspaceDocuments = await documents
     .find({ workspaceId })
@@ -22,7 +28,7 @@ export async function getWorkspaceDocument(params: {
   workspaceId: string;
   documentId: ObjectId;
 }): Promise<DocumentView | null> {
-  const document = await getWorkspaceDocumentRecord(params);
+  const document = await expirePendingUploadIfNeeded(params);
 
   return document ? toDocumentView(document) : null;
 }
