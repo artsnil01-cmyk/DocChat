@@ -14,7 +14,7 @@ export const chatRouteParamsSchema = z.object({
 });
 
 export const chatMessageRequestSchema = z.object({
-  chatId: objectIdStringSchema,
+  chatId: objectIdStringSchema.optional(),
   question: nonEmptyStringSchema.max(8000),
   documentIds: z.array(objectIdStringSchema).min(1).optional(),
 });
