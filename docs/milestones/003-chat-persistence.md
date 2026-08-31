@@ -13,7 +13,6 @@ Implement backend chat CRUD and stable chat scope rules before document upload a
 - [x] Define canonical empty-chat behavior.
 - [x] Load bounded recent conversation history.
 - [x] Keep `Chat.documentIds` as persistent/default document scope.
-- [ ] Validate per-query document restrictions against workspace and chat.
 - [x] Keep message persistence ready for RAG without streaming behavior.
 
 ## Validation

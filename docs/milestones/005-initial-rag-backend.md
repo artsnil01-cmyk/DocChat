@@ -45,7 +45,7 @@ type DocumentStage =
 
 - [x] Normalize text conservatively.
 - [x] Preserve page ranges during chunk assembly.
-- [ ] Keep extraction fallback-free: unsupported PDFs fail clearly.
+- [X] Keep extraction fallback-free: unsupported PDFs fail clearly.
 
 ## Structure And Chunking
 
@@ -71,6 +71,16 @@ type DocumentStage =
 - [x] Create MongoDB Atlas lexical Search index for `text`.
 - [x] Configure standard, French, and Arabic analyzers.
 
+## Retrieval Scope And Guards
+
+- [ ] Add chat/question retrieval request schema.
+- [ ] Load chat by workspace.
+- [ ] Resolve document scope from explicit `documentIds` or `Chat.documentIds`.
+- [ ] Validate selected documents belong to workspace.
+- [ ] Require selected documents to be `ready`.
+- [ ] Reject empty document scope.
+- [ ] Keep per-query document scope from mutating `Chat.documentIds`.
+
 ## Retrieval And Reranking
 
 - [ ] Load bounded recent chat history.
@@ -85,10 +95,9 @@ type DocumentStage =
 
 ## Chat Answering
 
-- [ ] Validate selected documents belong to workspace and chat scope.
-- [ ] Require selected documents to be `ready`.
 - [ ] Persist user messages.
-- [ ] Generate grounded OpenAI streamed answers.
+- [ ] Generate grounded OpenAI answers.
+- [ ] Add streaming after non-streaming answer path is correct.
 - [ ] Persist assistant messages.
 - [ ] Persist source child chunk IDs and rerank scores.
 
