@@ -30,3 +30,8 @@ export type FusedRetrievalCandidate = RetrievalCandidateBase & {
   lexicalRank?: number;
   fusedScore: number;
 };
+
+export type RerankedRetrievalCandidate = FusedRetrievalCandidate & {
+  rerankScore: number;
+  rerankRank: number;
+};
