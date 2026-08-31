@@ -3,6 +3,7 @@ import "server-only";
 import type { ObjectId } from "mongodb";
 
 import { getRagStrategy } from "@/config/rag";
+import { isDocumentProcessingCancelRequested } from "@/lib/documents/service/cancellation";
 import {
   createLockedDocumentLifecycle,
 } from "@/lib/documents/service/lifecycle";
@@ -38,7 +39,7 @@ export type RunDocumentIngestionResult =
         | "chunking_failed"
         | "chunk_persistence_failed"
         | "embedding_failed"
-        | "not_implemented"
+        | "cancelled"
         | "lock_lost";
     };
 
@@ -67,13 +68,23 @@ export async function runDocumentIngestion(params: {
       });
     }
 
-    const processingDocument = await lifecycle.markProcessing({
+    const readingStarted = await markStage(lifecycle, {
       stage: "reading",
       progress: strategy.progress.reading,
     });
 
-    if (!processingDocument) {
-      return { ok: false, reason: "lock_lost" };
+    if (!readingStarted.ok) {
+      return readingStarted;
+    }
+
+    const initialCancellation = await stopIfCancellationRequested(
+      lifecycle,
+      params,
+      "reading",
+    );
+
+    if (initialCancellation) {
+      return initialCancellation;
     }
 
     const blobBytesResult = await readVerifiedBlobBytes({
@@ -96,13 +107,23 @@ export async function runDocumentIngestion(params: {
       });
     }
 
-    const normalizingDocument = await lifecycle.markProcessing({
+    const readingCancellation = await stopIfCancellationRequested(
+      lifecycle,
+      params,
+      "reading",
+    );
+
+    if (readingCancellation) {
+      return readingCancellation;
+    }
+
+    const normalizingStarted = await markStage(lifecycle, {
       stage: "normalizing",
       progress: strategy.progress.normalizing,
     });
 
-    if (!normalizingDocument) {
-      return { ok: false, reason: "lock_lost" };
+    if (!normalizingStarted.ok) {
+      return normalizingStarted;
     }
 
     const normalizationResult = normalizePdfText(extractionResult.document);
@@ -118,13 +139,23 @@ export async function runDocumentIngestion(params: {
       });
     }
 
-    const chunkingDocument = await lifecycle.markProcessing({
+    const normalizingCancellation = await stopIfCancellationRequested(
+      lifecycle,
+      params,
+      "normalizing",
+    );
+
+    if (normalizingCancellation) {
+      return normalizingCancellation;
+    }
+
+    const chunkingStarted = await markStage(lifecycle, {
       stage: "chunking",
       progress: strategy.progress.chunking,
     });
 
-    if (!chunkingDocument) {
-      return { ok: false, reason: "lock_lost" };
+    if (!chunkingStarted.ok) {
+      return chunkingStarted;
     }
 
     const chunkingResult = buildPageAwareChunks({
@@ -161,13 +192,23 @@ export async function runDocumentIngestion(params: {
       });
     }
 
-    const embeddingDocument = await lifecycle.markProcessing({
+    const chunkingCancellation = await stopIfCancellationRequested(
+      lifecycle,
+      params,
+      "chunking",
+    );
+
+    if (chunkingCancellation) {
+      return chunkingCancellation;
+    }
+
+    const embeddingStarted = await markStage(lifecycle, {
       stage: "embedding",
       progress: strategy.progress.embedding,
     });
 
-    if (!embeddingDocument) {
-      return { ok: false, reason: "lock_lost" };
+    if (!embeddingStarted.ok) {
+      return embeddingStarted;
     }
 
     try {
@@ -187,13 +228,33 @@ export async function runDocumentIngestion(params: {
       });
     }
 
-    const indexingDocument = await lifecycle.markProcessing({
+    const embeddingCancellation = await stopIfCancellationRequested(
+      lifecycle,
+      params,
+      "embedding",
+    );
+
+    if (embeddingCancellation) {
+      return embeddingCancellation;
+    }
+
+    const indexingStarted = await markStage(lifecycle, {
       stage: "indexing",
       progress: strategy.progress.indexing,
     });
 
-    if (!indexingDocument) {
-      return { ok: false, reason: "lock_lost" };
+    if (!indexingStarted.ok) {
+      return indexingStarted;
+    }
+
+    const indexingCancellation = await stopIfCancellationRequested(
+      lifecycle,
+      params,
+      "indexing",
+    );
+
+    if (indexingCancellation) {
+      return indexingCancellation;
     }
 
     const readyDocument = await lifecycle.markReady({
@@ -212,6 +273,41 @@ export async function runDocumentIngestion(params: {
       token: params.lockToken,
     });
   }
+}
+
+async function markStage(
+  lifecycle: LockedDocumentLifecycle,
+  params: {
+    stage: DocumentStage;
+    progress: number;
+  },
+): Promise<{ ok: true } | { ok: false; reason: "lock_lost" }> {
+  const document = await lifecycle.markProcessing(params);
+
+  return document ? { ok: true } : { ok: false, reason: "lock_lost" };
+}
+
+async function stopIfCancellationRequested(
+  lifecycle: LockedDocumentLifecycle,
+  params: {
+    workspaceId: string;
+    documentId: ObjectId;
+  },
+  stage: DocumentStage,
+): Promise<RunDocumentIngestionResult | null> {
+  const cancelRequested = await isDocumentProcessingCancelRequested(params);
+
+  if (!cancelRequested) {
+    return null;
+  }
+
+  const cancelledDocument = await lifecycle.markCancelled({ stage });
+
+  if (!cancelledDocument) {
+    return { ok: false, reason: "lock_lost" };
+  }
+
+  return { ok: false, reason: "cancelled" };
 }
 
 async function readVerifiedBlobBytes(params: {

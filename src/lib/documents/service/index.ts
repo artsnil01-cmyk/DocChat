@@ -1,5 +1,6 @@
 export * from "@/lib/documents/service/actions";
 export * from "@/lib/documents/service/attachments";
+export * from "@/lib/documents/service/cancellation";
 export * from "@/lib/documents/service/cleanup";
 export * from "@/lib/documents/service/lifecycle";
 export * from "@/lib/documents/service/locks";

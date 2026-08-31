@@ -4,7 +4,8 @@ export type DocumentStatus =
   | "pending_upload"
   | "processing"
   | "ready"
-  | "failed";
+  | "failed"
+  | "cancelled";
 
 export type DocumentStage =
   | "reading"
@@ -36,6 +37,7 @@ export type Document = {
   progress?: number;
   error?: DocumentError;
   processingLock?: DocumentProcessingLock;
+  cancelRequestedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 };

@@ -196,6 +196,7 @@ export async function markDocumentFailed(params: {
       },
       $unset: {
         processingLock: "",
+        cancelRequestedAt: "",
       },
     },
     {
@@ -226,6 +227,36 @@ export async function markDocumentReady(params: {
         stage: "",
         error: "",
         processingLock: "",
+        cancelRequestedAt: "",
+      },
+    },
+    {
+      returnDocument: "after",
+    },
+  );
+
+  return document ? toDocumentView(document) : null;
+}
+
+export async function markDocumentCancelled(params: {
+  workspaceId: string;
+  documentId: ObjectId;
+  stage: DocumentStage;
+  guard?: DocumentWriteGuard;
+}): Promise<DocumentView | null> {
+  const documents = await documentsCollection();
+  const document = await documents.findOneAndUpdate(
+    buildDocumentLifecycleFilter(params),
+    {
+      $set: {
+        status: "cancelled",
+        stage: params.stage,
+        updatedAt: new Date(),
+      },
+      $unset: {
+        error: "",
+        processingLock: "",
+        cancelRequestedAt: "",
       },
     },
     {
@@ -273,6 +304,14 @@ export function createLockedDocumentLifecycle(params: {
       pageCount: number;
     }): Promise<DocumentView | null> {
       return markDocumentReady({
+        ...target,
+        ...input,
+      });
+    },
+    markCancelled(input: {
+      stage: DocumentStage;
+    }): Promise<DocumentView | null> {
+      return markDocumentCancelled({
         ...target,
         ...input,
       });
