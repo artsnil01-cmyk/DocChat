@@ -1,3 +1,4 @@
+export * from "@/lib/rag/retrieval/chunks";
 export * from "@/lib/rag/retrieval/dense";
 export * from "@/lib/rag/retrieval/fusion";
 export * from "@/lib/rag/retrieval/lexical";
