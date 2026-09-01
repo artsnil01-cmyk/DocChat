@@ -120,7 +120,7 @@ export function LoginShell({ children }: LoginShellProps) {
           </div>
         </aside>
       </section>
-      <div className={styles.loginFooter}>DocChat by Smartly.ai</div>
+      <div className={styles.loginFooter}>DocChat by MaybeSmartly</div>
     </main>
   );
 }

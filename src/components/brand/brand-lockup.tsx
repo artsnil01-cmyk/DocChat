@@ -14,7 +14,7 @@ export function BrandLockup({ className }: BrandLockupProps) {
       <span className={styles.brandName}>
         Doc<span>Chat</span>
       </span>
-      <span className={styles.brandBy}>by Smartly.ai</span>
+      <span className={styles.brandBy}>by MaybeSmartly</span>
     </div>
   );
 }
