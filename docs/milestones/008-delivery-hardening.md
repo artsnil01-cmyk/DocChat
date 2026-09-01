@@ -2,25 +2,21 @@
 
 ## Goal
 
-Prepare the application for review and Vercel deployment.
+Finalize documentation, README, and Vercel deployment readiness.
 
 ## Steps
 
-- [ ] Add rate limiting.
-- [ ] Add structured logging with correlation IDs.
-- [ ] Finalize error contracts.
-- [ ] Tune refusal and grounding behavior.
-- [ ] Finalize retrieval score presentation.
-- [ ] Add sample PDFs.
-- [ ] Complete README.
-- [ ] Add final architecture diagrams.
+- [x] Complete root README.
+- [x] Harden setup and deployment documentation.
+- [x] Review architecture docs for stale decisions.
+- [x] Fill manual evaluation results.
+- [x] Run final local validation.
 - [ ] Validate Vercel deployment.
-- [ ] Record final evaluation summary.
 
 ## Validation
 
-- [ ] `npm run typecheck`
-- [ ] `npm run lint`
+- [x] `npm run typecheck`
+- [x] `npm run lint`
 - [ ] `npm run build`
-- [ ] Full test suite passes.
-- [ ] Deployed app satisfies PRD success criteria.
+- [x] Full test suite passes.
+- [ ] Deployed app can authenticate, upload, ingest, chat, stream answers, and show sources.
