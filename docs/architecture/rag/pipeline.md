@@ -12,13 +12,23 @@ The production path is `page-parent-child-v1`. It extracts native PDF text by pa
 - `lib/rag/retrieval/` owns dense retrieval, lexical retrieval, and fusion.
 - `lib/rag/reranking/` owns Cohere reranking.
 - `lib/rag/context/` owns parent evidence context and evidence budgeting.
-- `lib/rag/answer/` owns grounded OpenAI prompt construction and answer generation.
+- `lib/rag/answer/` owns grounded OpenAI prompt construction and answer streaming.
 
-## LangChain Boundary
+## Provider Boundary
 
-LangChain may be used only as integration plumbing where it adds value.
+Provider SDKs are used directly at integration points:
 
-The RAG architecture stays custom. PDF text extraction, chunking, MongoDB retrieval, RRF, parent expansion, context budgeting, authorization, and answer generation depend on explicit project behavior.
+- Cohere SDK for embeddings and reranking.
+- OpenAI Responses API for query enrichment, title generation, and streamed answers.
+- MongoDB Atlas Search for vector and lexical retrieval.
+
+The RAG architecture stays explicit because core behavior is project-specific:
+
+- PDF extraction preserves page numbers, line breaks, headings, and native-text failure behavior.
+- Chunking is custom parent/child, page-aware, and strategy-versioned.
+- Retrieval mixes Atlas vector search, Atlas lexical search, RRF fusion, Cohere reranking, then parent expansion.
+- Document scope depends on chat policy: explicit selected documents or stored `Chat.documentIds`.
+- Persistence needs exact Mongo records, lock-aware ingestion, cancellation, retry, source hydration, and workspace authorization.
 
 ## Ingestion Contract
 
@@ -36,10 +46,14 @@ The ingestion runner reads the private Blob, verifies SHA-256, extracts page tex
 
 ```mermaid
 flowchart TD
-  A["User question"] --> B["Resolve chat and document scope"]
-  B --> C["Contextualize question when needed"]
-  C --> D["Dense retrieval over child embeddings"]
-  C --> E["Lexical retrieval over child text"]
+  A["User question"] --> B["Resolve chat policy and document scope"]
+  B --> C{"Uses stored Chat.documentIds?"}
+  C -->|Yes| C1["Contextualize with bounded history"]
+  C -->|No| C2["Use original question"]
+  C1 --> D["Dense retrieval over child embeddings"]
+  C1 --> E["Lexical retrieval over child text"]
+  C2 --> D
+  C2 --> E
   D --> F["RRF fusion by child chunk"]
   E --> F
   F --> G["Cohere rerank fused child candidates"]

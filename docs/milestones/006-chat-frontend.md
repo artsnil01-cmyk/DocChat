@@ -4,7 +4,7 @@
 
 Implement the user-facing chat and document workspace on top of the stable backend domains.
 
-Current scope: one active answer at a time. Streaming is required and remains a later frontend/backend wiring phase.
+Current scope: one active streamed answer at a time.
 
 ## Steps
 
@@ -18,8 +18,7 @@ Current scope: one active answer at a time. Streaming is required and remains a 
 - [x] Add document selector.
 - [x] Add selected document scope display.
 - [x] Add `@document` interaction.
-- [x] Render non-streaming assistant messages.
-- [ ] Render streamed assistant messages.
+- [x] Render streamed assistant messages.
 - [x] Present readable sources.
 - [x] Hydrate persisted sources when reopening a chat.
 - [x] Show active chat document context.

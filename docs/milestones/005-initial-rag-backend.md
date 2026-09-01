@@ -12,7 +12,7 @@ Implement the production `page-parent-child-v1` ingestion and retrieval pipeline
 - [x] Set `RAG_STRATEGY_VERSION=page-parent-child-v1`.
 - [x] Replace flat RAG config with strategy map.
 - [x] Centralize chunk, retrieval, embedding, reranking, and evidence-budget constants.
-- [x] Define LangChain as integration plumbing, not the RAG architecture.
+- [x] Use provider SDKs only at integration boundaries.
 
 ## Ingestion Trigger And State
 
@@ -57,7 +57,7 @@ type DocumentStage =
 ## Embedding And Persistence
 
 - [x] Add token budgeting dependency.
-- [x] Add LangChain only when wiring embeddings or reranking.
+- [x] Use Cohere SDK directly for embeddings.
 - [x] Embed child chunks with Cohere `search_document`.
 - [x] Batch child embeddings.
 - [x] Delete stale chunks before retry.
@@ -97,8 +97,7 @@ type DocumentStage =
 
 - [x] Persist user messages.
 - [x] Generate grounded OpenAI answers.
-- [x] Keep current answer path non-streaming.
-- [ ] Add required streaming response path.
+- [x] Add required streaming response path.
 - [x] Persist assistant messages.
 - [x] Persist source child chunk IDs and rerank scores.
 - [x] Hydrate persisted sources to document names, page ranges, and excerpts.

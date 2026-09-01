@@ -4,25 +4,30 @@ Retrieval combines dense vector search and MongoDB Atlas lexical search, then de
 
 ## Responsibilities
 
-- Query contextualization rewrites dependent follow-up questions only when needed.
+- Query contextualization rewrites dependent follow-up questions only when the request uses stored `Chat.documentIds`.
 - Dense retrieval embeds the contextualized retrieval query with Cohere and searches MongoDB Atlas Vector Search.
 - Lexical retrieval uses the contextualized retrieval query with MongoDB Atlas Search and French/Arabic analyzers.
 - Candidate fusion uses Reciprocal Rank Fusion and deduplicates child chunks before reranking.
 - Cohere reranking receives the retrieval query and fused child candidate texts.
 - Parent evidence is loaded after reranking.
 
-Retrieval must always filter by current workspace and selected document IDs.
+Retrieval must always filter by current workspace and resolved document IDs.
 
 ## Implementation Boundary
 
-LangChain wraps Cohere embeddings and reranking. MongoDB vector search, lexical search, RRF fusion, parent expansion, context budgeting, and workspace filtering stay explicit application code.
+Cohere embeddings and reranking use the official Cohere SDK directly. MongoDB vector search, lexical search, RRF fusion, parent expansion, context budgeting, and workspace filtering stay explicit application code.
 
 ## Flow
 
 ```mermaid
 flowchart TD
-  A["Contextualized retrieval query"] --> B["Dense child retrieval"]
-  A --> C["Lexical child retrieval"]
+  A["User question"] --> A1{"Explicit documentIds?"}
+  A1 -->|Yes| A2["Use original question"]
+  A1 -->|No| A3["Contextualize with bounded history"]
+  A2 --> B["Dense child retrieval"]
+  A2 --> C["Lexical child retrieval"]
+  A3 --> B
+  A3 --> C
   B --> D["RRF child fusion"]
   C --> D
   D --> E["Cohere rerank"]

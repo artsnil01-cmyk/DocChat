@@ -17,6 +17,8 @@ Document ingestion turns a verified private Blob PDF into searchable MongoDB chu
 | `embedding` | Embed child chunks with Cohere `search_document`. |
 | `indexing` | Finalize indexed data and mark the document ready. |
 
+Reading preserves citation-critical structure: page numbers, line breaks, paragraph gaps, probable headings, and clear failure for unsupported native-text extraction.
+
 ## Flow
 
 ```mermaid
