@@ -20,6 +20,16 @@ Provider model choices are non-secret defaults and live in `config/ai.ts`.
 
 These values describe which external models the application uses. They do not replace provider credentials.
 
+## Application Constants
+
+Non-secret operational limits live in `config/`.
+
+Examples:
+
+- document upload size, upload token lifetime, pending-upload lifetime, processing-lock lifetime;
+- chat history window;
+- RAG chunk limits, retrieval limits, evidence budget, and progress anchors.
+
 ## RAG Operation Configuration
 
 `RAG_STRATEGY_VERSION` remains an environment variable because it controls which deterministic RAG strategy is active at runtime.

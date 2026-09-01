@@ -11,5 +11,8 @@ DocChat protects paid provider-backed functionality behind a shared test account
 - Validate PDF MIME type and size.
 - Keep Blob objects private.
 - Use short-lived scoped upload authorization.
+- Verify completed Blob uploads against the declared SHA-256 hash before parsing.
+- Scope chat, document, and retrieval operations to the authenticated workspace.
+- Keep document processing writes protected by processing-lock tokens.
 - Rate-limit paid API-backed endpoints.
 - Avoid logging sensitive document content by default.

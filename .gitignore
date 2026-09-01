@@ -22,6 +22,9 @@ pnpm-debug.log*
 .next-dev.log
 .next-dev.err
 
+# local evaluation PDFs
+evaluation/fixtures/**/*.pdf
+
 # Vercel
 .vercel/
 

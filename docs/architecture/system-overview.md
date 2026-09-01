@@ -4,14 +4,15 @@ DocChat is a Next.js application deployed on Vercel. It provides authenticated a
 
 ## Responsibilities
 
-- Next.js handles UI routes, API routes, answer responses, and deployment runtime.
+- Next.js handles UI routes, API routes, streamed chat answers, and deployment runtime.
 - MongoDB Atlas stores accounts, sessions, documents, chunks, chats, messages, and search indexes.
 - Vercel Blob stores original private PDF files.
 - Cohere provides multilingual embeddings and reranking.
-- OpenAI provides grounded answer generation.
+- OpenAI provides query enrichment, chat titles, and streamed grounded answers.
 
 ## Boundaries
 
 - Frontend code must not access provider secrets.
 - API routes must delegate business logic to `lib/`.
 - RAG pipeline steps are backend-owned and are not exposed as separate public parse/chunk/embed endpoints.
+- Chat answering uses `POST /api/chat` as the streamed answer route.
