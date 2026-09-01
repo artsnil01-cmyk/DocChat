@@ -1,8 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { chatAnsweringErrorResponse } from "@/lib/api/chat-answering";
 import { readJson, requireApiWorkspace } from "@/lib/api/request";
-import { answerChatMessage } from "@/lib/chat/answering";
+import {
+  streamChatAnswer,
+  type AnswerChatMessageFailure,
+  type StreamChatAnswerEvent,
+} from "@/lib/chat/answering";
 import { chatMessageRequestSchema } from "@/lib/chat/schemas";
+
+type ChatStreamEvent =
+  | StreamChatAnswerEvent
+  | {
+      type: "error";
+      error: string;
+      reason?: AnswerChatMessageFailure["reason"];
+      documentId?: string;
+    };
+
+const encoder = new TextEncoder();
 
 export async function POST(request: NextRequest) {
   const workspace = await requireApiWorkspace();
@@ -18,66 +34,107 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid chat request." }, { status: 400 });
   }
 
-  const result = await answerChatMessage({
+  const events = streamChatAnswer({
     workspaceId: workspace.value.workspaceId,
     request: parsedBody.data,
   });
+  const firstEvent = await events.next();
 
-  if (!result.ok) {
-    return chatAnsweringErrorResponse(result);
+  if (firstEvent.done) {
+    return NextResponse.json(
+      { error: "Chat stream did not produce a response." },
+      { status: 500 },
+    );
   }
 
-  return NextResponse.json({
-    chat: result.chat,
-    messages: {
-      user: result.userMessage,
-      assistant: result.assistantMessage,
+  if (isFailureEvent(firstEvent.value)) {
+    return chatAnsweringErrorResponse(firstEvent.value);
+  }
+
+  return new Response(createChatStream(events, firstEvent.value), {
+    headers: {
+      "Cache-Control": "no-cache, no-transform",
+      "Content-Type": "application/x-ndjson; charset=utf-8",
+      "X-Accel-Buffering": "no",
     },
-    answer: result.answer,
-    citations: result.citations,
-    evidence: result.evidence,
   });
 }
 
-function chatAnsweringErrorResponse(
-  result: Exclude<Awaited<ReturnType<typeof answerChatMessage>>, { ok: true }>,
-): NextResponse {
+function createChatStream(
+  events: AsyncGenerator<StreamChatAnswerEvent | AnswerChatMessageFailure>,
+  firstEvent: StreamChatAnswerEvent,
+): ReadableStream<Uint8Array> {
+  return new ReadableStream({
+    async start(controller) {
+      controller.enqueue(encodeStreamEvent(firstEvent));
+
+      try {
+        for await (const event of events) {
+          controller.enqueue(
+            encodeStreamEvent(
+              isFailureEvent(event) ? toFailureStreamEvent(event) : event,
+            ),
+          );
+        }
+      } catch {
+        controller.enqueue(
+          encodeStreamEvent({
+            type: "error",
+            error: "Chat stream failed.",
+          }),
+        );
+      } finally {
+        controller.close();
+      }
+    },
+  });
+}
+
+function encodeStreamEvent(event: ChatStreamEvent): Uint8Array {
+  return encoder.encode(`${JSON.stringify(event)}\n`);
+}
+
+function isFailureEvent(
+  event: StreamChatAnswerEvent | AnswerChatMessageFailure,
+): event is AnswerChatMessageFailure {
+  return "ok" in event && event.ok === false;
+}
+
+function toFailureStreamEvent(result: AnswerChatMessageFailure): ChatStreamEvent {
   if (result.reason === "chat_not_found") {
-    return NextResponse.json({ error: "Chat not found." }, { status: 404 });
+    return {
+      type: "error",
+      error: "Chat not found.",
+      reason: result.reason,
+    };
   }
 
   if (
     result.reason === "document_not_found" ||
     result.reason === "document_not_ready"
   ) {
-    return NextResponse.json(
-      {
-        error: "Document scope is not available.",
-        reason: result.reason,
-        documentId: result.documentId,
-      },
-      { status: 409 },
-    );
+    return {
+      type: "error",
+      error: "Document scope is not available.",
+      reason: result.reason,
+      documentId: result.documentId,
+    };
   }
 
   if (
     result.reason === "invalid_chat_request" ||
     result.reason === "empty_document_scope"
   ) {
-    return NextResponse.json(
-      {
-        error: "Invalid chat request.",
-        reason: result.reason,
-      },
-      { status: 400 },
-    );
+    return {
+      type: "error",
+      error: "Invalid chat request.",
+      reason: result.reason,
+    };
   }
 
-  return NextResponse.json(
-    {
-      error: "No evidence was found for this question.",
-      reason: result.reason,
-    },
-    { status: 404 },
-  );
+  return {
+    type: "error",
+    error: "No evidence was found for this question.",
+    reason: result.reason,
+  };
 }

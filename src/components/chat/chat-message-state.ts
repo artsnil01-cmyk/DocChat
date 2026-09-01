@@ -1,8 +1,8 @@
 import type {
   ClientChatDetail,
+  ClientChatEvidence,
   ClientChatMessage,
   ClientChatSummary,
-  SendClientChatMessageResponse,
 } from "@/lib/client/chats";
 
 const optimisticChatId = "local:new-chat";
@@ -55,25 +55,78 @@ export function appendOptimisticAnsweringMessages(params: {
   };
 }
 
-export function buildAnsweredChatDetail(params: {
+export function buildPreparedStreamingChatDetail(params: {
   previousChat: ClientChatDetail | null;
-  response: SendClientChatMessageResponse;
+  chat: ClientChatSummary;
+  userMessage: ClientChatMessage;
 }): ClientChatDetail {
   const previousMessages =
-    params.previousChat?.id === params.response.chat.id
-      ? params.previousChat.messages
-      : [];
+    params.previousChat?.id === params.chat.id ? params.previousChat.messages : [];
+  const thinkingMessage = createThinkingMessage(params.chat.id);
 
   return {
-    ...params.response.chat,
-    messages: [
-      ...previousMessages,
-      params.response.messages.user,
-      {
-        ...params.response.messages.assistant,
-        evidence: params.response.evidence,
-      },
-    ],
+    ...params.chat,
+    messages: [...previousMessages, params.userMessage, thinkingMessage],
+  };
+}
+
+export function appendStreamingAssistantDelta(params: {
+  chat: ClientChatDetail;
+  text: string;
+}): ClientChatDetail {
+  return {
+    ...params.chat,
+    messages: params.chat.messages.map((message) =>
+      message.id === thinkingMessageId
+        ? {
+            ...message,
+            content: `${message.content}${params.text}`,
+            status: "streaming",
+          }
+        : message,
+    ),
+  };
+}
+
+export function completeStreamingChatDetail(params: {
+  chat: ClientChatDetail;
+  summary: ClientChatSummary;
+  assistantMessage: ClientChatMessage;
+  evidence: ClientChatEvidence[];
+}): ClientChatDetail {
+  const persistedAssistantMessage = {
+    ...params.assistantMessage,
+    evidence: params.evidence,
+  };
+  const hasThinkingMessage = params.chat.messages.some(
+    (message) => message.id === thinkingMessageId,
+  );
+
+  return {
+    ...params.summary,
+    messages: hasThinkingMessage
+      ? params.chat.messages.map((message) =>
+          message.id === thinkingMessageId ? persistedAssistantMessage : message,
+        )
+      : [...params.chat.messages, persistedAssistantMessage],
+  };
+}
+
+export function failStreamingAssistantMessage(params: {
+  chat: ClientChatDetail;
+  message: string;
+}): ClientChatDetail {
+  return {
+    ...params.chat,
+    messages: params.chat.messages.map((message) =>
+      message.id === thinkingMessageId
+        ? {
+            ...message,
+            content: params.message,
+            status: "failed",
+          }
+        : message,
+    ),
   };
 }
 

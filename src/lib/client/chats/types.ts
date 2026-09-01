@@ -70,3 +70,33 @@ export type SendClientChatMessageResponse = {
   citations: ClientChatCitation[];
   evidence: ClientChatEvidence[];
 };
+
+export type ClientChatStreamEvent =
+  | {
+      type: "prepared";
+      chat: ClientChatSummary;
+      userMessage: ClientChatMessage;
+      evidence: ClientChatEvidence[];
+    }
+  | {
+      type: "title";
+      chat: ClientChatSummary;
+    }
+  | {
+      type: "delta";
+      text: string;
+    }
+  | {
+      type: "done";
+      chat: ClientChatSummary;
+      assistantMessage: ClientChatMessage;
+      answer: string;
+      citations: string[];
+      evidence: ClientChatEvidence[];
+    }
+  | {
+      type: "error";
+      error: string;
+      reason?: string;
+      documentId?: string;
+    };
