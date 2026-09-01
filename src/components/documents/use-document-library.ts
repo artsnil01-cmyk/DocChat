@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { documentConfig } from "@/config/documents";
 import { listClientDocuments, type ClientDocument } from "@/lib/client/documents";
 import {
   cancelLibraryDocumentProcessing,
@@ -154,6 +155,11 @@ export function useDocumentLibrary(): UseDocumentLibraryResult {
       return;
     }
 
+    if (file.size > documentConfig.maxPdfSizeBytes) {
+      showNotice("Le fichier depasse la limite de 10 Mo.");
+      return;
+    }
+
     const localId = `upload:${crypto.randomUUID()}`;
     const abortController = new AbortController();
 
@@ -199,23 +205,7 @@ export function useDocumentLibrary(): UseDocumentLibraryResult {
     } catch (error) {
       const message = getClientErrorMessage(error);
       setDocuments((currentDocuments) =>
-        currentDocuments.map((document) =>
-          document.id === localId
-            ? {
-                ...document,
-                isUploading: false,
-                status: "failed",
-                actionError: message,
-                error: {
-                  code: "upload_failed",
-                  message,
-                },
-                nextAction: {
-                  type: "upload",
-                },
-              }
-            : document,
-        ),
+        currentDocuments.filter((document) => document.id !== localId),
       );
       setState((currentState) => ({
         ...currentState,
