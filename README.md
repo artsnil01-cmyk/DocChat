@@ -5,8 +5,8 @@ DocChat is a full-stack Next.js document intelligence app for asking grounded qu
 ## Implemented Scope
 
 - PDF upload with type and 10 MB size validation.
-- Direct browser-to-Vercel Blob upload for files beyond API route payload limits.
-- Private Blob storage with scoped upload tokens and backend upload completion verification.
+- Client SHA-256 preflight, duplicate detection, then direct browser-to-Vercel Blob upload for files beyond API route payload limits.
+- Private Blob storage with scoped upload tokens, Blob callback handling, and backend SHA-256 verification before ingestion.
 - MongoDB Atlas persistence for sessions, workspaces, documents, chunks, chats, and messages.
 - Page-aware RAG ingestion: PDF text extraction, conservative normalization, parent/child chunking, Cohere embeddings, and Atlas indexing.
 - Hybrid retrieval: Atlas Vector Search, Atlas lexical Search, RRF fusion, Cohere reranking, then parent evidence expansion.
@@ -33,18 +33,23 @@ Rate limiting and structured logging are intentionally left out of the current d
 
 ```mermaid
 flowchart TD
-  A["PDF upload"] --> B["Private Blob"]
-  B --> C["Verify SHA-256"]
-  C --> D["Extract native text by page"]
-  D --> E["Normalize and build parent/child chunks"]
-  E --> F["Embed child chunks with Cohere"]
-  F --> G["Persist chunks in MongoDB"]
-  H["User question"] --> I["Resolve chat document scope"]
-  I --> J["Optional query enrichment"]
-  J --> K["Vector + lexical retrieval"]
-  K --> L["RRF fusion + Cohere rerank"]
-  L --> M["Parent evidence context"]
-  M --> N["Stream grounded OpenAI answer"]
+  U1["Select PDF"] --> U2["Client SHA-256 preflight"]
+  U2 --> U3{"Duplicate hash?"}
+  U3 -->|Yes| U4["Return existing document"]
+  U3 -->|No| U5["Create pending document"]
+  U5 --> U6["Direct private Blob upload"]
+  U6 --> U7["Blob callback"]
+  U7 --> U8["Server SHA-256 verification"]
+  U8 --> U9["Extract native text by page"]
+  U9 --> U10["Normalize and build parent/child chunks"]
+  U10 --> U11["Embed child chunks with Cohere"]
+  U11 --> U12["Persist chunks in MongoDB"]
+  Q1["User question"] --> Q2["Resolve chat document scope"]
+  Q2 --> Q3["Optional query enrichment"]
+  Q3 --> Q4["Vector + lexical retrieval"]
+  Q4 --> Q5["RRF fusion + Cohere rerank"]
+  Q5 --> Q6["Parent evidence context"]
+  Q6 --> Q7["Stream grounded OpenAI answer"]
 ```
 
 ## Local Setup
